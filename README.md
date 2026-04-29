@@ -1,22 +1,40 @@
 # Rocket League Broadcast Studio
 
-A local producer-controlled broadcast overlay for Rocket League streams. It reads the Rocket League Stats API, gives a producer a control panel, and serves a transparent OBS output page.
+A local producer-controlled broadcast overlay for Rocket League streams. It reads the Rocket League Stats API, gives a producer a live control panel, and serves a transparent OBS output page.
 
-This is the larger broadcast-tool project. If you only want a small ball-speed overlay, use the separate `rocket-league-ball-speed-overlay` repo.
+![Producer panel](assets/screenshots/producer-panel.png)
 
 ## Features
 
-- Producer control panel for live overlay state
-- Transparent OBS output page
-- Move, resize, hide, and show overlay modules
-- Scoreboard with series dots for best of 3, 5, or 7 and an optional producer title
-- Compact team roster modules with player names and live boost meters
-- Separate detailed roster modules with per-player stats
-- Ball speed module with team-colored animation based on last touch
-- Focused-player module with producer-selected fallback
+- Producer panel for live match metadata, module visibility, and layout editing
+- Transparent OBS/browser-source output page
+- Drag, resize, center, hide, and show overlay modules
+- Multi-select movement in the preview canvas with `Shift + click`, drag, and arrow-key nudging
+- Scoreboard with team names, scores, game clock, series dots, and optional title bar
+- Compact RLCS-style roster modules with player names, boost values, and boost bars
+- Separate detailed roster modules with per-player score, goals, saves, assists, and demos
+- Team Totals module for one selected team: goals, saves, assists, and demos
+- Focused Player lower-third module with producer-selected fallback
+- Ball speed badge using last-touch team color
+- Automatic goal celebration screen with scorer name and animated module transitions
+- Module groups with group-level and individual visibility toggles
 - Output refresh command for OBS browser sources
 - Optional lobby ratings view using a local `mmr.json` file
 - No npm dependencies
+
+## Screenshots
+
+### Producer Panel
+
+Use this page outside OBS to control the stream overlay.
+
+![Producer panel](assets/screenshots/producer-panel.png)
+
+### OBS Output
+
+Use this transparent page as the OBS Browser Source.
+
+![Output view](assets/screenshots/output-view.png)
 
 ## Requirements
 
@@ -55,7 +73,7 @@ Then open PowerShell in this project folder and run:
 npm start
 ```
 
-Open the producer panel in your regular browser:
+Open the producer panel:
 
 ```text
 http://127.0.0.1:5173/studio.html
@@ -74,7 +92,145 @@ Width: 1600
 Height: 900
 ```
 
-If OBS does not update after layout changes, use the producer panel's refresh button. If OBS is still stale, right-click the Browser Source and choose **Refresh cache of current page**.
+Avoid scaling the browser source up in OBS if possible. Scaling a `1600x900` source to a larger canvas can make text and fine lines look soft. For the sharpest output, keep the browser source at the same size as the overlay stage or update the project stage size to your final broadcast resolution.
+
+## Producer Panel Guide
+
+The producer panel is split into a left control panel and a right preview canvas.
+
+### Match
+
+Use the Match section for stream-level data:
+
+- `Show Focus` / `Hide Focus`: toggles the Focused Player module.
+- `Scoreboard Title`: optional title shown above the scoreboard. Leave this blank to hide the title in the output.
+- `Blue Team` and `Orange Team`: override team names from the Stats API.
+- `Series`: choose best of 3, 5, or 7.
+- `Blue Wins` and `Orange Wins`: controls the scoreboard series dots.
+- `Focused Player`: choose a fallback player for the Focused Player module. `Auto` lets the overlay prefer the currently spectated player when the Stats API exposes one.
+
+### Modules
+
+Modules are grouped by purpose:
+
+- `Core`: scoreboard and ball speed
+- `Compact Rosters`: small RLCS-style name/boost rosters
+- `Detailed Rosters`: larger stat-card roster modules
+- `Stats`: Team Totals
+- `Focus`: Focused Player lower third
+
+Each group has an eye toggle to show or hide the whole group. Each module row also has its own eye toggle for individual visibility.
+
+Hidden modules are removed from the preview canvas so unused modules do not clutter the editor. If you select a hidden module from the list, it appears as a dashed placement ghost so you can edit or reposition it.
+
+The Team Totals row includes a `Blue/Orange` selector in the module list. This chooses which team the Team Totals module highlights.
+
+### Preview Canvas
+
+The preview canvas represents a `1600x900` overlay stage.
+
+- Click a module box to select it.
+- Drag a selected module box to move it.
+- Drag the bottom-right corner handle to resize it.
+- Press the arrow keys to move the highlighted module one grid box at a time.
+- `Shift + click` a module box to add or remove it from the highlighted selection.
+- Drag any highlighted module to move the selected group together.
+- Press the arrow keys with multiple modules highlighted to nudge the whole group one grid box.
+- Click the floating `H` button to center the module horizontally.
+- Click the floating `V` button to center the module vertically.
+- Compact roster modules include a floating `S` button to match the other roster size.
+
+The same controls are summarized in the legend underneath the preview canvas. The floating `H`, `V`, and `S` buttons appear when a module is selected or hovered; when a module is near the top edge, those buttons appear underneath it so they remain clickable.
+
+Resize is intentionally single-module only.
+
+### Selected
+
+The Selected section shows numeric controls for the primary selected module:
+
+- `X` and `Y`: module position on the 1600x900 stage
+- `Width` and `Height`: module dimensions
+- `Team`: appears for Team Totals and controls which team is highlighted
+
+When multiple modules are selected, this panel still edits the most recently selected module.
+
+### Actions
+
+- `Save Layout`: immediately saves the current overlay state.
+- `Refresh Output`: tells OBS/browser output pages to refresh.
+- `Reset`: restores the default layout.
+- `Open OBS Output`: opens the transparent output page in a new tab.
+
+Most producer changes auto-save after a short delay. Use `Save Layout` when you want to force a save immediately.
+
+## Overlay Modules
+
+### Scoreboard
+
+Shows team names, current score, game clock, series dots, and an optional title bar. The title is controlled by `Scoreboard Title` in the producer panel and is hidden when blank.
+
+### Compact Rosters
+
+Small side roster modules designed to sit near the scoreboard. They show:
+
+- Player name
+- Numeric boost
+- Thin horizontal boost bar
+- Active/spectated player name highlight when available
+
+### Detailed Rosters
+
+Larger roster modules for stat-heavy moments. Each player card shows:
+
+- Player name
+- Boost
+- Score
+- Goals
+- Saves
+- Assists
+- Demos
+
+These are separate modules from Compact Rosters, so you can hide compact rosters and show detailed rosters only when needed.
+
+### Team Totals
+
+Highlights one selected team and shows:
+
+- Goals
+- Saves
+- Assists
+- Demos
+
+Use the inline Blue/Orange selector in the Modules list to choose the team.
+
+### Focused Player
+
+A lower-third style focused-player module. It prefers the currently spectated player when the Stats API provides that data, then falls back to the producer-selected player.
+
+### Ball Speed
+
+A compact ball speed badge colored by the ball's last-touch team.
+
+### Goal Celebration
+
+When a goal is detected, the normal overlay modules animate out, a large `GOAL` screen animates in with the scoring player name, then the celebration clears after 3 seconds and the regular modules return to their saved positions.
+
+## OBS Setup
+
+Create a Browser Source with:
+
+```text
+URL: http://127.0.0.1:5173/output.html
+Width: 1600
+Height: 900
+```
+
+Suggested OBS settings:
+
+- Enable transparency.
+- Do not scale the source up if avoidable.
+- If the output looks stale after layout changes, click `Refresh Output` in the producer panel.
+- If OBS is still stale, right-click the Browser Source and choose **Refresh cache of current page**.
 
 ## Project Views
 
@@ -110,13 +266,13 @@ The producer layout is saved to:
 overlay-state.json
 ```
 
-That file is ignored by git so each producer can keep their own layout. A starter copy is included as:
+That file is ignored by git so each producer can keep their own local layout. A starter copy is included as:
 
 ```text
 overlay-state.example.json
 ```
 
-To reset from the producer panel, click **Reset**.
+To reset from the producer panel, click `Reset`.
 
 ## Lobby Ratings
 
@@ -160,7 +316,7 @@ Project files:
 - `output.html`, `output.js`, `output.css`: transparent OBS output
 - `lobby.html`, `lobby.js`, `lobby.css`: optional lobby ratings view
 - `overlay-state.example.json`: starter producer layout
-- `assets/`: visual assets used by the overlay
+- `assets/`: visual assets and README screenshots
 
 ## Disclaimer
 

@@ -16,6 +16,7 @@
       <section>
         <h2>Match</h2>
         <button class="group-toggle" id="toggleFocusButton" type="button">Switch to Focus</button>
+        <button class="group-toggle" id="previewGoalButton" type="button">Preview Goal</button>
         <label>Scoreboard Title <input id="matchTitle" type="text" placeholder="Fall Major | Swiss Stage | Round 2" /></label>
         <label>Blue Team <input id="blueName" type="text" /></label>
         <label>Orange Team <input id="orangeName" type="text" /></label>
@@ -78,6 +79,15 @@
       </div>
       <section class="canvas-wrap">
         <div class="canvas" id="canvas"></div>
+        <div class="canvas-legend" aria-label="Preview controls">
+          <span><strong>Module box</strong> drag to move</span>
+          <span><strong>Corner handle</strong> drag to resize</span>
+          <span><strong>Shift + click</strong> add module to selection</span>
+          <span><strong>Arrow keys</strong> move selected modules one grid box</span>
+          <span><strong>H</strong> center horizontally</span>
+          <span><strong>V</strong> center vertically</span>
+          <span><strong>S</strong> match roster size</span>
+        </div>
       </section>
     </main>
 

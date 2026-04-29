@@ -11,6 +11,11 @@ const state = {
   rlSocket: null,
   stateSocket: null,
   renderedModules: new Map(),
+  goal: {
+    active: false,
+    node: null,
+    timer: null,
+  },
 };
 
 function wsUrl(path) {
@@ -131,6 +136,10 @@ function teamForPlayer(player) {
   return player.TeamNum === 1 ? teams().orange : teams().blue;
 }
 
+function teamByNumber(teamNum) {
+  return Number(teamNum) === 1 ? teams().orange : teams().blue;
+}
+
 function playerKey(player) {
   return [player.TeamNum, player.Shortcut, player.PrimaryId, player.Name].filter(Boolean).join(":");
 }
@@ -208,6 +217,71 @@ function playerTotals(players) {
     },
     { goals: 0, saves: 0, assists: 0, demos: 0 },
   );
+}
+
+function valueFromPath(source, path) {
+  return path.split(".").reduce((value, key) => value?.[key], source);
+}
+
+function scorerNameFromValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value === "object") {
+    return value.Name || value.PlayerName || value.name || value.Player || value.Id || "";
+  }
+
+  return "";
+}
+
+function explicitGoalInfo(message) {
+  const eventName = String(message?.Event || "");
+
+  if (eventName.toLowerCase() !== "goalscored") {
+    return null;
+  }
+
+  console.info("[overlay] GoalScored event received", message.Data || {});
+  const data = message?.Data || {};
+  const candidates = [
+    "Scorer",
+    "GoalScorer",
+    "Player",
+    "PlayerName",
+    "Name",
+    "ScoredBy",
+    "Goal.Player",
+    "Goal.Scorer",
+    "Goal.PlayerName",
+    "LatestGoal.Player",
+    "LatestGoal.Scorer",
+    "LatestGoal.PlayerName",
+  ];
+  const scorerName = candidates.map((path) => scorerNameFromValue(valueFromPath(data, path))).find(Boolean);
+  const hasRealScorer = Boolean(String(scorerName || "").trim());
+  const hasGoalDetails = Number(data.GoalSpeed || 0) > 0 || Number(data.GoalTime || 0) > 0;
+  const teamNum =
+    data.TeamNum ??
+    data.Team ??
+    data.Goal?.TeamNum ??
+    data.Goal?.Team ??
+    data.Scorer?.TeamNum ??
+    data.Player?.TeamNum;
+
+  if (!hasRealScorer || !hasGoalDetails) {
+    console.info("[overlay] Ignored blank GoalScored event", data);
+    return null;
+  }
+
+  return {
+    scorerName,
+    teamNum: Number.isFinite(Number(teamNum)) ? Number(teamNum) : 0,
+  };
 }
 
 function moduleStyle(module) {
@@ -505,15 +579,79 @@ function focusedPlayer(module) {
         ${stats.map(([label, value]) => `<div class="focus-stat"><strong>${value}</strong><span>${label}</span></div>`).join("")}
       </div>
       <div class="focus-boost">
-        <span>${boost === null ? "--" : boost}</span>
+        <strong>${boost === null ? "--" : boost}</strong>
+        <span>Boost</span>
       </div>
       <div class="focus-boost-track" aria-hidden="true"><span></span></div>
     </section>
   `;
 }
 
+function goalCelebrationHtml(goal) {
+  const team = teamByNumber(goal.teamNum);
+
+  return `
+    <section class="goal-celebration goal-team-${Number(goal.teamNum) === 1 ? "orange" : "blue"}" style="--goal-primary:${team.primary};--goal-secondary:${team.secondary};">
+      <div class="goal-burst" aria-hidden="true"></div>
+      <div class="goal-panel">
+        <div class="goal-kicker">${team.name}</div>
+        <div class="goal-word">GOAL</div>
+        <div class="goal-scorer">${goal.scorerName}</div>
+      </div>
+    </section>
+  `;
+}
+
+function clearGoalCelebration() {
+  window.clearTimeout(state.goal.timer);
+  state.goal.timer = null;
+
+  if (state.goal.node) {
+    const node = state.goal.node;
+    node.dataset.motionState = "exit";
+    window.setTimeout(() => node.remove(), 640);
+  }
+
+  state.goal.node = null;
+  state.goal.active = false;
+  render();
+}
+
+function showGoalCelebration(goal, options = {}) {
+  if (!goal) {
+    return;
+  }
+
+  if (!options.force && state.goal.active) {
+    return;
+  }
+
+  window.clearTimeout(state.goal.timer);
+
+  if (state.goal.node) {
+    state.goal.node.remove();
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = goalCelebrationHtml(goal);
+  const node = wrapper.firstElementChild;
+  node.dataset.motionState = "enter";
+  stage.append(node);
+  state.goal.node = node;
+  state.goal.active = true;
+  render();
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      node.dataset.motionState = "visible";
+    });
+  });
+
+  state.goal.timer = window.setTimeout(clearGoalCelebration, 3000);
+}
+
 function shouldShowModule(module) {
-  return module.visible;
+  return module.visible && !state.goal.active;
 }
 
 function renderModule(module) {
@@ -610,11 +748,15 @@ function connectRocketLeague() {
   state.rlSocket = new WebSocket(wsUrl("/rl"));
   state.rlSocket.addEventListener("message", (event) => {
     const message = parseMessage(event);
+
     if (message?.Event === "UpdateState") {
       state.latest = message.Data;
       syncClock(message.Data?.Game?.TimeSeconds, message.Data?.Game?.bOvertime);
       render();
+      return;
     }
+
+    showGoalCelebration(explicitGoalInfo(message));
 
     if (message?.Event === "ClockUpdatedSeconds") {
       state.latest = state.latest || { Game: {} };
@@ -639,6 +781,10 @@ function connectOverlayState() {
 
     if (message?.type === "outputRefresh") {
       window.location.reload();
+    }
+
+    if (message?.type === "goalPreview") {
+      showGoalCelebration(message.goal, { force: true });
     }
   });
   state.stateSocket.addEventListener("close", () => window.setTimeout(connectOverlayState, 1200));

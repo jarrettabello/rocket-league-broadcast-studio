@@ -100,6 +100,153 @@ body {
     filter 0.28s ease;
 }
 
+.goal-celebration {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 1;
+  transition:
+    opacity 0.5s ease,
+    filter 0.5s ease,
+    transform 0.64s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.goal-celebration::before,
+.goal-celebration::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.goal-celebration::before {
+  background:
+    radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--goal-primary) 46%, transparent), transparent 30%),
+    linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.72) 22%, rgba(0, 0, 0, 0.72) 78%, transparent);
+  opacity: 0.92;
+}
+
+.goal-celebration::after {
+  background:
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 22px);
+  mix-blend-mode: screen;
+  opacity: 0.28;
+}
+
+.goal-celebration[data-motion-state="enter"],
+.goal-celebration[data-motion-state="exit"] {
+  opacity: 0;
+  filter: blur(8px);
+  transform: scale(1.08);
+}
+
+.goal-celebration[data-motion-state="visible"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+.goal-burst {
+  position: absolute;
+  width: 860px;
+  height: 860px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg, transparent 0 8deg, color-mix(in srgb, var(--goal-primary) 78%, #ffffff 12%) 8deg 11deg, transparent 11deg 24deg),
+    radial-gradient(circle, transparent 0 38%, rgba(255, 255, 255, 0.12) 38.5% 39%, transparent 40%),
+    radial-gradient(circle, color-mix(in srgb, var(--goal-primary) 38%, transparent), transparent 58%);
+  opacity: 0.78;
+  animation: goal-burst-spin 5s linear infinite;
+}
+
+.goal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(1160px, 82%);
+  min-height: 330px;
+  padding: 34px 54px 42px;
+  border: 2px solid color-mix(in srgb, var(--goal-primary) 72%, #ffffff 14%);
+  clip-path: polygon(4% 0, 96% 0, 100% 18%, 100% 82%, 96% 100%, 4% 100%, 0 82%, 0 18%);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 28%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.075) 0 2px, transparent 2px 24px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.9), color-mix(in srgb, var(--goal-primary) 30%, rgba(0, 0, 0, 0.88)) 50%, rgba(0, 0, 0, 0.9));
+  box-shadow:
+    0 34px 80px rgba(0, 0, 0, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -34px 70px rgba(0, 0, 0, 0.38);
+}
+
+.goal-panel::before,
+.goal-panel::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 7px;
+  background: var(--goal-primary);
+  box-shadow: 0 0 22px var(--goal-primary);
+}
+
+.goal-panel::before {
+  top: 24px;
+}
+
+.goal-panel::after {
+  bottom: 24px;
+}
+
+.goal-kicker {
+  color: var(--goal-secondary, #ffffff);
+  font-size: 26px;
+  font-weight: 950;
+  text-transform: uppercase;
+  text-shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.76),
+    0 0 18px var(--goal-primary);
+}
+
+.goal-word {
+  color: #ffffff;
+  font-size: 150px;
+  font-weight: 950;
+  line-height: 0.9;
+  text-transform: uppercase;
+  text-shadow:
+    6px 6px 0 rgba(0, 0, 0, 0.86),
+    0 0 34px var(--goal-primary),
+    0 0 70px color-mix(in srgb, var(--goal-primary) 60%, transparent);
+  transform: skewX(-7deg);
+}
+
+.goal-scorer {
+  max-width: 88%;
+  overflow: hidden;
+  color: var(--goal-secondary, #ffffff);
+  font-size: 44px;
+  font-weight: 950;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-shadow:
+    3px 3px 0 rgba(0, 0, 0, 0.78),
+    0 0 22px var(--goal-primary);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@keyframes goal-burst-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .scoreboard {
   container-type: size;
   padding: 0;
@@ -946,7 +1093,7 @@ body {
   border: 0;
   border-radius: 0;
   display: grid;
-  grid-template-columns: 33% minmax(0, 1fr) 13%;
+  grid-template-columns: 31% minmax(0, 1fr) 12%;
   grid-template-rows: 1fr 4px;
   align-items: stretch;
   overflow: hidden;
@@ -999,13 +1146,14 @@ body {
 .focus-stat {
   min-width: 0;
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: center;
+  align-content: center;
+  justify-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 0 8px;
+  gap: 2px;
+  padding: 0 5px;
   border-left: 1px solid rgba(255, 255, 255, 0.12);
   color: #d6dee8;
+  text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1019,22 +1167,35 @@ body {
 
 .focus-stat span {
   overflow: hidden;
-  font-size: clamp(9px, 8cqh, 12px);
+  max-width: 100%;
+  font-size: clamp(8px, 7cqh, 11px);
   font-weight: 900;
   text-overflow: ellipsis;
 }
 
 .focus-boost {
   display: grid;
-  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
   border-left: 1px solid rgba(255, 255, 255, 0.14);
   color: #ffffff;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 44%),
     rgba(3, 7, 12, 0.88);
-  font-size: clamp(16px, 17cqh, 26px);
   font-weight: 950;
   font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+.focus-boost strong {
+  font-size: clamp(15px, 15cqh, 24px);
+}
+
+.focus-boost span {
+  color: var(--muted);
+  font-size: clamp(8px, 7cqh, 11px);
+  font-weight: 900;
 }
 
 .focus-boost-track {

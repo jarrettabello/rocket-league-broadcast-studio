@@ -364,6 +364,19 @@ async function handleApiRequest(request, response, pathname) {
     return true;
   }
 
+  if (pathname === "/api/goal-preview" && request.method === "POST") {
+    try {
+      const body = await readRequestJson(request);
+      const scorerName = String(body.scorerName || "Preview Player").trim() || "Preview Player";
+      const teamNum = Number(body.teamNum) === 1 ? 1 : 0;
+      broadcastTo(overlayStateClients, { type: "goalPreview", goal: { scorerName, teamNum } });
+      sendJson(response, 200, { ok: true });
+    } catch {
+      sendJson(response, 400, { error: "Invalid goal preview JSON" });
+    }
+    return true;
+  }
+
   return false;
 }
 

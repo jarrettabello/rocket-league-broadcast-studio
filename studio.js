@@ -22,6 +22,7 @@ const elements = {
   orangeSeriesWins: document.querySelector("#orangeSeriesWins"),
   focusedPlayerId: document.querySelector("#focusedPlayerId"),
   toggleFocusButton: document.querySelector("#toggleFocusButton"),
+  previewGoalButton: document.querySelector("#previewGoalButton"),
   selectedHint: document.querySelector("#selectedHint"),
   selectedForm: document.querySelector("#selectedForm"),
   moduleX: document.querySelector("#moduleX"),
@@ -357,6 +358,7 @@ function renderCanvas() {
     node.dataset.id = module.id;
     node.dataset.selected = isSelected(module.id);
     node.dataset.visible = module.visible;
+    node.dataset.toolsPlacement = module.y * ratio < 38 ? "bottom" : "top";
     node.style.left = `${module.x * ratio}px`;
     node.style.top = `${module.y * ratio}px`;
     node.style.width = `${module.w * ratio}px`;
@@ -537,6 +539,38 @@ function selectedDragModules(moduleId) {
     : state.overlay.modules.filter((module) => module.id === moduleId);
 }
 
+function moveSelectedModules(dx, dy) {
+  const modules = state.overlay?.modules.filter((module) => isSelected(module.id)) || [];
+
+  if (modules.length === 0) {
+    return;
+  }
+
+  const minDx = Math.max(...modules.map((module) => -module.x));
+  const maxDx = Math.min(...modules.map((module) => canvasSize.width - (module.x + module.w)));
+  const minDy = Math.max(...modules.map((module) => -module.y));
+  const maxDy = Math.min(...modules.map((module) => canvasSize.height - (module.y + moduleDisplayHeight(module))));
+  const clampedDx = Math.max(minDx, Math.min(maxDx, dx));
+  const clampedDy = Math.max(minDy, Math.min(maxDy, dy));
+
+  if (clampedDx === 0 && clampedDy === 0) {
+    return;
+  }
+
+  for (const module of modules) {
+    module.x = snap(module.x + clampedDx);
+    module.y = snap(module.y + clampedDy);
+  }
+
+  renderCanvas();
+  renderSelectedForm();
+  markDirty();
+}
+
+function isEditingField(target) {
+  return target.closest?.("input, textarea, select, button, [contenteditable='true']");
+}
+
 function startDrag(event, moduleId, mode) {
   event.preventDefault();
   event.stopPropagation();
@@ -622,6 +656,27 @@ function onPointerUp() {
   state.drag = null;
 }
 
+function onKeyDown(event) {
+  if (isEditingField(event.target)) {
+    return;
+  }
+
+  const moves = {
+    ArrowLeft: [-gridSize, 0],
+    ArrowRight: [gridSize, 0],
+    ArrowUp: [0, -gridSize],
+    ArrowDown: [0, gridSize],
+  };
+  const move = moves[event.key];
+
+  if (!move) {
+    return;
+  }
+
+  event.preventDefault();
+  moveSelectedModules(move[0], move[1]);
+}
+
 async function loadState() {
   const response = await fetch("./api/overlay-state", { cache: "no-store" });
   state.overlay = await response.json();
@@ -666,6 +721,26 @@ async function refreshOutput() {
   }, 1200);
 }
 
+async function previewGoal() {
+  await saveState();
+  const focusedId = state.overlay?.meta?.focusedPlayerId;
+  const player = state.players.find((item) => playerKey(item) === focusedId) || state.players[0];
+  const scorerName = player?.Name || "Preview Player";
+  const teamNum = Number.isFinite(Number(player?.TeamNum)) ? Number(player.TeamNum) : 0;
+
+  await fetch("./api/goal-preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scorerName, teamNum }),
+  });
+
+  const originalText = elements.previewGoalButton.textContent;
+  elements.previewGoalButton.textContent = "Goal Preview Sent";
+  window.setTimeout(() => {
+    elements.previewGoalButton.textContent = originalText;
+  }, 1200);
+}
+
 [
   elements.blueName,
   elements.orangeName,
@@ -688,8 +763,10 @@ elements.saveButton.addEventListener("click", saveState);
 elements.refreshButton.addEventListener("click", refreshOutput);
 elements.resetButton.addEventListener("click", resetState);
 elements.toggleFocusButton.addEventListener("click", toggleFocusedView);
+elements.previewGoalButton.addEventListener("click", previewGoal);
 window.addEventListener("pointermove", onPointerMove);
 window.addEventListener("pointerup", onPointerUp);
+window.addEventListener("keydown", onKeyDown);
 window.addEventListener("resize", renderCanvas);
 
 loadState();

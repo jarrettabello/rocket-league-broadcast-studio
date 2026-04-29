@@ -199,18 +199,14 @@ function boostValue(player) {
 function playerTotals(players) {
   return players.reduce(
     (totals, player) => {
-      const boost = boostValue(player);
-
       return {
-        boost: totals.boost + (boost || 0),
-        boostKnown: totals.boostKnown + (boost === null ? 0 : 1),
-        score: totals.score + (player.Score || 0),
         goals: totals.goals + (player.Goals || 0),
         saves: totals.saves + (player.Saves || 0),
         assists: totals.assists + (player.Assists || 0),
+        demos: totals.demos + (player.Demos || 0),
       };
     },
-    { boost: 0, boostKnown: 0, score: 0, goals: 0, saves: 0, assists: 0 },
+    { goals: 0, saves: 0, assists: 0, demos: 0 },
   );
 }
 
@@ -418,23 +414,63 @@ function roster(module) {
   `;
 }
 
-function teamTotals(module) {
-  const { blue, orange } = teams();
-  const blueTotals = playerTotals(playersForTeam(0));
-  const orangeTotals = playerTotals(playersForTeam(1));
+function detailedPlayerCard(player) {
+  const team = teamForPlayer(player);
+  const boost = boostValue(player);
+  const boostPercent = boost === null ? 0 : boost;
+  const stats = [
+    ["Score", player.Score || 0],
+    ["Goals", player.Goals || 0],
+    ["Saves", player.Saves || 0],
+    ["Assists", player.Assists || 0],
+    ["Demos", player.Demos || 0],
+  ];
 
   return `
-    <section class="${moduleClass(module, "team-totals")}" data-module-id="${module.id}" style="${moduleStyle(module)}">
-      <div class="total-name blue" style="--team-primary:${blue.primary};--team-secondary:${blue.secondary};">${blue.name}</div>
-      <div class="total-stats">
-        <span>Boost <strong>${blueTotals.boostKnown ? blueTotals.boost : "--"}</strong></span>
-        <span>Score <strong>${blueTotals.score + orangeTotals.score}</strong></span>
-        <span>Goals <strong>${blueTotals.goals + orangeTotals.goals}</strong></span>
-        <span>Saves <strong>${blueTotals.saves + orangeTotals.saves}</strong></span>
-        <span>Assists <strong>${blueTotals.assists + orangeTotals.assists}</strong></span>
-        <span>Boost <strong>${orangeTotals.boostKnown ? orangeTotals.boost : "--"}</strong></span>
+    <article class="detailed-player-card" style="--team-primary:${team.primary};--team-secondary:${team.secondary};--boost:${boostPercent}%;">
+      <div class="detailed-player-head">
+        <span>${player.Name || "Unknown"}</span>
+        <strong>${boost === null ? "--" : boost}</strong>
       </div>
-      <div class="total-name orange" style="--team-primary:${orange.primary};--team-secondary:${orange.secondary};">${orange.name}</div>
+      <div class="detailed-boost-track" aria-hidden="true"><span></span></div>
+      <div class="detailed-stat-grid">
+        ${stats.map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function detailedRoster(module) {
+  const team = module.settings?.team || 0;
+  const players = playersForTeam(team);
+  const teamInfo = team === 1 ? teams().orange : teams().blue;
+
+  return `
+    <section class="${moduleClass(module, "detailed-roster")}" data-module-id="${module.id}" style="${moduleStyle(module)}--team-primary:${teamInfo.primary};--team-secondary:${teamInfo.secondary};">
+      ${players.map(detailedPlayerCard).join("") || ""}
+    </section>
+  `;
+}
+
+function teamTotals(module) {
+  const { blue, orange } = teams();
+  const team = module.settings?.team || 0;
+  const teamInfo = team === 1 ? orange : blue;
+  const teamClass = team === 1 ? "orange" : "blue";
+  const totals = playerTotals(playersForTeam(team));
+  const stats = [
+    ["Goals", totals.goals],
+    ["Saves", totals.saves],
+    ["Assists", totals.assists],
+    ["Demos", totals.demos],
+  ];
+
+  return `
+    <section class="${moduleClass(module, `team-totals totals-${teamClass}`)}" data-module-id="${module.id}" style="${moduleStyle(module)}--team-primary:${teamInfo.primary};--team-secondary:${teamInfo.secondary};">
+      <div class="total-name">${teamInfo.name}</div>
+      <div class="total-stats">
+        ${stats.map(([label, value]) => `<span><strong>${value}</strong>${label}</span>`).join("")}
+      </div>
     </section>
   `;
 }
@@ -477,11 +513,7 @@ function focusedPlayer(module) {
 }
 
 function shouldShowModule(module) {
-  const viewMode = state.overlay?.meta?.viewMode || "basic";
-  const forcedFocus = module.type === "focusedPlayer" && viewMode === "focus";
-  const hiddenForFocus = module.type === "roster" && viewMode === "focus";
-
-  return !((!module.visible && !forcedFocus) || hiddenForFocus);
+  return module.visible;
 }
 
 function renderModule(module) {
@@ -492,6 +524,7 @@ function renderModule(module) {
   if (module.type === "scoreboard") return scoreboardV2(module);
   if (module.type === "ballSpeed") return ballSpeed(module);
   if (module.type === "roster") return roster(module);
+  if (module.type === "detailedRoster") return detailedRoster(module);
   if (module.type === "teamTotals") return teamTotals(module);
   if (module.type === "focusedPlayer") return focusedPlayer(module);
   return "";

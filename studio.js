@@ -4,6 +4,7 @@ const scoreboardAspect = 1983 / 290;
 const state = {
   overlay: null,
   selectedId: null,
+  selectedIds: new Set(),
   players: [],
   drag: null,
   dirtyTimer: null,
@@ -19,16 +20,16 @@ const elements = {
   seriesLength: document.querySelector("#seriesLength"),
   blueSeriesWins: document.querySelector("#blueSeriesWins"),
   orangeSeriesWins: document.querySelector("#orangeSeriesWins"),
-  viewMode: document.querySelector("#viewMode"),
   focusedPlayerId: document.querySelector("#focusedPlayerId"),
   toggleFocusButton: document.querySelector("#toggleFocusButton"),
-  toggleRostersButton: document.querySelector("#toggleRostersButton"),
   selectedHint: document.querySelector("#selectedHint"),
   selectedForm: document.querySelector("#selectedForm"),
   moduleX: document.querySelector("#moduleX"),
   moduleY: document.querySelector("#moduleY"),
   moduleW: document.querySelector("#moduleW"),
   moduleH: document.querySelector("#moduleH"),
+  moduleTeamSetting: document.querySelector("#moduleTeamSetting"),
+  moduleTeam: document.querySelector("#moduleTeam"),
   saveButton: document.querySelector("#saveButton"),
   refreshButton: document.querySelector("#refreshButton"),
   resetButton: document.querySelector("#resetButton"),
@@ -55,6 +56,30 @@ function selectedModule() {
   return state.overlay?.modules.find((module) => module.id === state.selectedId);
 }
 
+function isSelected(moduleId) {
+  return state.selectedIds.has(moduleId);
+}
+
+function selectModule(id) {
+  state.selectedId = id;
+  state.selectedIds = new Set(id ? [id] : []);
+  render();
+}
+
+function toggleModuleSelection(id) {
+  if (state.selectedIds.has(id)) {
+    state.selectedIds.delete(id);
+    if (state.selectedId === id) {
+      state.selectedId = state.selectedIds.values().next().value || null;
+    }
+  } else {
+    state.selectedIds.add(id);
+    state.selectedId = id;
+  }
+
+  render();
+}
+
 function playerKey(player) {
   return [player.TeamNum, player.Shortcut, player.PrimaryId, player.Name].filter(Boolean).join(":");
 }
@@ -64,11 +89,15 @@ function scale() {
 }
 
 function moduleLabel(module) {
+  if (module.type === "teamTotals") {
+    return "Team Totals";
+  }
+
   const labels = {
     scoreboard: "Scoreboard",
     ballSpeed: "Ball Speed",
     roster: module.settings?.team === 1 ? "Orange Roster" : "Blue Roster",
-    teamTotals: "Team Totals",
+    detailedRoster: module.settings?.team === 1 ? "Orange Detailed Roster" : "Blue Detailed Roster",
     focusedPlayer: "Focused Player",
   };
 
@@ -87,6 +116,7 @@ function centerModule(moduleId, axis) {
   const module = state.overlay.modules.find((item) => item.id === moduleId);
 
   if (!module) {
+    elements.moduleTeamSetting.hidden = true;
     return;
   }
 
@@ -147,58 +177,154 @@ function eyeIcon(isVisible) {
   `;
 }
 
-function renderModuleList() {
-  elements.moduleList.replaceChildren();
-  const rosters = state.overlay.modules.filter((module) => module.type === "roster");
-  const anyRosterVisible = rosters.some((module) => module.visible);
-  elements.toggleRostersButton.textContent = anyRosterVisible ? "Hide Rosters" : "Show Rosters";
-
-  for (const module of state.overlay.modules) {
-    const row = document.createElement("div");
-    row.className = "module-row";
-    row.dataset.selected = module.id === state.selectedId;
-    row.dataset.visible = module.visible;
-    row.innerHTML = `
-      <button class="module-select" type="button">
-        <strong>${moduleLabel(module)}</strong>
-        <span>${module.type}</span>
-      </button>
-      <button class="visibility-toggle" type="button" aria-label="${module.visible ? "Hide" : "Show"} ${moduleLabel(module)}" title="${module.visible ? "Hide" : "Show"}">
-        ${eyeIcon(module.visible)}
-      </button>
-    `;
-    row.addEventListener("click", () => selectModule(module.id));
-    row.querySelector(".visibility-toggle").addEventListener("click", (event) => {
-      event.stopPropagation();
-      module.visible = !module.visible;
-      if (module.visible) {
-        selectModule(module.id);
-      } else {
-        state.selectedId = null;
-        render();
-      }
-      markDirty();
-    });
-    elements.moduleList.append(row);
+function moduleGroup(module) {
+  if (module.type === "scoreboard" || module.type === "ballSpeed") {
+    return { id: "core", label: "Core" };
   }
+
+  if (module.type === "roster") {
+    return { id: "compact-rosters", label: "Compact Rosters" };
+  }
+
+  if (module.type === "detailedRoster") {
+    return { id: "detailed-rosters", label: "Detailed Rosters" };
+  }
+
+  if (module.type === "teamTotals") {
+    return { id: "stats", label: "Stats" };
+  }
+
+  if (module.type === "focusedPlayer") {
+    return { id: "focus", label: "Focus" };
+  }
+
+  return { id: "other", label: "Other" };
 }
 
-function toggleRosters() {
-  const rosters = state.overlay.modules.filter((module) => module.type === "roster");
-  const anyRosterVisible = rosters.some((module) => module.visible);
-
-  for (const roster of rosters) {
-    roster.visible = !anyRosterVisible;
+function setModulesVisible(modules, isVisible) {
+  for (const module of modules) {
+    module.visible = isVisible;
   }
 
-  renderModuleList();
-  renderCanvas();
+  if (!isVisible) {
+    for (const module of modules) {
+      state.selectedIds.delete(module.id);
+    }
+    if (!state.selectedIds.has(state.selectedId)) {
+      state.selectedId = state.selectedIds.values().next().value || null;
+    }
+  }
+
+  render();
   markDirty();
 }
 
-function setRosterModulesVisible(isVisible) {
-  for (const roster of state.overlay.modules.filter((module) => module.type === "roster")) {
-    roster.visible = isVisible;
+function renderModuleList() {
+  elements.moduleList.replaceChildren();
+  const groupOrder = ["core", "compact-rosters", "detailed-rosters", "stats", "focus", "other"];
+  const groupsById = new Map();
+
+  for (const module of state.overlay.modules) {
+    const group = moduleGroup(module);
+    let entry = groupsById.get(group.id);
+
+    if (!entry) {
+      entry = { ...group, modules: [] };
+      groupsById.set(group.id, entry);
+    }
+
+    entry.modules.push(module);
+  }
+
+  const groups = [...groupsById.values()].sort(
+    (a, b) => groupOrder.indexOf(a.id) - groupOrder.indexOf(b.id),
+  );
+
+  for (const group of groups) {
+    const groupNode = document.createElement("div");
+    groupNode.className = "module-group";
+    const anyVisible = group.modules.some((module) => module.visible);
+    groupNode.dataset.visible = anyVisible;
+    groupNode.innerHTML = `
+      <div class="module-group-header">
+        <span class="group-icon" aria-hidden="true"></span>
+        <span>${group.label}</span>
+        <button class="visibility-toggle group-visibility-toggle" type="button" aria-label="${anyVisible ? "Hide" : "Show"} ${group.label}" title="${anyVisible ? "Hide" : "Show"} ${group.label}">
+          ${eyeIcon(anyVisible)}
+        </button>
+      </div>
+      <div class="module-group-items"></div>
+    `;
+
+    groupNode.querySelector(".group-visibility-toggle").addEventListener("click", () => {
+      setModulesVisible(group.modules, !anyVisible);
+    });
+
+    const items = groupNode.querySelector(".module-group-items");
+
+    for (const module of group.modules) {
+      const row = document.createElement("div");
+      row.className = "module-row";
+      row.dataset.selected = isSelected(module.id);
+      row.dataset.visible = module.visible;
+      row.innerHTML = `
+        <button class="module-select" type="button">
+          <strong>${moduleLabel(module)}</strong>
+          <span>${module.type}</span>
+        </button>
+        ${
+          module.type === "teamTotals"
+            ? `
+              <label class="module-inline-setting" aria-label="Team Totals team">
+                <select class="module-team-select">
+                  <option value="0"${(module.settings?.team || 0) === 0 ? " selected" : ""}>Blue</option>
+                  <option value="1"${(module.settings?.team || 0) === 1 ? " selected" : ""}>Orange</option>
+                </select>
+              </label>
+            `
+            : ""
+        }
+        <button class="visibility-toggle" type="button" aria-label="${module.visible ? "Hide" : "Show"} ${moduleLabel(module)}" title="${module.visible ? "Hide" : "Show"}">
+          ${eyeIcon(module.visible)}
+        </button>
+      `;
+      row.addEventListener("click", (event) => {
+        if (event.shiftKey) {
+          toggleModuleSelection(module.id);
+        } else {
+          selectModule(module.id);
+        }
+      });
+      row.querySelector(".module-team-select")?.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+      });
+      row.querySelector(".module-team-select")?.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+      row.querySelector(".module-team-select")?.addEventListener("change", (event) => {
+        event.stopPropagation();
+        module.settings = { ...(module.settings || {}), team: Number(event.currentTarget.value || 0) };
+        render();
+        markDirty();
+      });
+      row.querySelector(".visibility-toggle").addEventListener("click", (event) => {
+        event.stopPropagation();
+        module.visible = !module.visible;
+        if (module.visible) {
+          selectModule(module.id);
+        } else {
+          state.selectedIds.delete(module.id);
+          if (state.selectedId === module.id) {
+            state.selectedId = state.selectedIds.values().next().value || null;
+          }
+          render();
+        }
+        markDirty();
+      });
+      items.append(row);
+    }
+
+    elements.moduleList.append(groupNode);
   }
 }
 
@@ -209,11 +335,10 @@ function setFocusModuleVisible(isVisible) {
 }
 
 function toggleFocusedView() {
-  const isFocused = state.overlay.meta.viewMode === "focus";
+  const focusModules = state.overlay.modules.filter((module) => module.type === "focusedPlayer");
+  const anyFocusedVisible = focusModules.some((module) => module.visible);
 
-  state.overlay.meta.viewMode = isFocused ? "basic" : "focus";
-  setRosterModulesVisible(isFocused);
-  setFocusModuleVisible(!isFocused);
+  setFocusModuleVisible(!anyFocusedVisible);
   render();
   markDirty();
 }
@@ -223,14 +348,14 @@ function renderCanvas() {
   const ratio = scale();
 
   for (const module of state.overlay.modules) {
-    if (!module.visible && module.id !== state.selectedId) {
+    if (!module.visible && !isSelected(module.id)) {
       continue;
     }
 
     const node = document.createElement("div");
     node.className = "canvas-module";
     node.dataset.id = module.id;
-    node.dataset.selected = module.id === state.selectedId;
+    node.dataset.selected = isSelected(module.id);
     node.dataset.visible = module.visible;
     node.style.left = `${module.x * ratio}px`;
     node.style.top = `${module.y * ratio}px`;
@@ -301,9 +426,8 @@ function renderMetaForm() {
   elements.seriesLength.value = meta.seriesLength || 5;
   elements.blueSeriesWins.value = meta.blueSeriesWins || 0;
   elements.orangeSeriesWins.value = meta.orangeSeriesWins || 0;
-  elements.viewMode.value = meta.viewMode || "basic";
-  elements.toggleFocusButton.textContent =
-    meta.viewMode === "focus" ? "Switch to Rosters" : "Switch to Focus";
+  const anyFocusedVisible = state.overlay.modules.some((module) => module.type === "focusedPlayer" && module.visible);
+  elements.toggleFocusButton.textContent = anyFocusedVisible ? "Hide Focus" : "Show Focus";
   renderFocusedPlayers();
 }
 
@@ -331,6 +455,11 @@ function renderSelectedForm() {
   elements.moduleY.value = module.y;
   elements.moduleW.value = module.w;
   elements.moduleH.value = module.h;
+  elements.moduleTeamSetting.hidden = module.type !== "teamTotals";
+
+  if (module.type === "teamTotals") {
+    elements.moduleTeam.value = String(module.settings?.team || 0);
+  }
 }
 
 function render() {
@@ -342,11 +471,6 @@ function render() {
   renderModuleList();
   renderCanvas();
   renderSelectedForm();
-}
-
-function selectModule(id) {
-  state.selectedId = id;
-  render();
 }
 
 function markDirty() {
@@ -374,7 +498,6 @@ function updateMeta() {
     seriesLength: Number(elements.seriesLength.value || 5),
     blueSeriesWins: Number(elements.blueSeriesWins.value || 0),
     orangeSeriesWins: Number(elements.orangeSeriesWins.value || 0),
-    viewMode: elements.viewMode.value,
     focusedPlayerId: elements.focusedPlayerId.value,
   });
   markDirty();
@@ -394,6 +517,10 @@ function updateSelectedModule() {
     h: Number(elements.moduleH.value || 60),
   });
 
+  if (module.type === "teamTotals") {
+    module.settings = { ...(module.settings || {}), team: Number(elements.moduleTeam.value || 0) };
+  }
+
   if (module.type === "scoreboard") {
     module.h = moduleDisplayHeight(module);
   }
@@ -403,16 +530,42 @@ function updateSelectedModule() {
   markDirty();
 }
 
+function selectedDragModules(moduleId) {
+  const selectedModules = state.overlay.modules.filter((module) => isSelected(module.id));
+  return selectedModules.some((module) => module.id === moduleId)
+    ? selectedModules
+    : state.overlay.modules.filter((module) => module.id === moduleId);
+}
+
 function startDrag(event, moduleId, mode) {
   event.preventDefault();
   event.stopPropagation();
-  selectModule(moduleId);
-  const module = selectedModule();
+
+  if (event.shiftKey && mode === "move") {
+    toggleModuleSelection(moduleId);
+    return;
+  }
+
+  if (mode === "resize" || !isSelected(moduleId)) {
+    selectModule(moduleId);
+  } else {
+    state.selectedId = moduleId;
+  }
+
+  const module = state.overlay.modules.find((item) => item.id === moduleId);
   const ratio = scale();
+  const modules = mode === "move" ? selectedDragModules(moduleId) : [module];
 
   state.drag = {
     mode,
     module,
+    modules: modules.map((item) => ({
+      module: item,
+      x: item.x,
+      y: item.y,
+      w: item.w,
+      h: item.h,
+    })),
     startX: event.clientX,
     startY: event.clientY,
     moduleX: module.x,
@@ -441,8 +594,23 @@ function onPointerMove(event) {
       module.h = moduleDisplayHeight(module);
     }
   } else {
-    module.x = Math.max(0, Math.min(canvasSize.width - module.w, snap(state.drag.moduleX + dx)));
-    module.y = Math.max(0, Math.min(canvasSize.height - module.h, snap(state.drag.moduleY + dy)));
+    const snappedDx = snap(dx);
+    const snappedDy = snap(dy);
+    const minDx = Math.max(...state.drag.modules.map((item) => -item.x));
+    const maxDx = Math.min(
+      ...state.drag.modules.map((item) => canvasSize.width - (item.x + item.w)),
+    );
+    const minDy = Math.max(...state.drag.modules.map((item) => -item.y));
+    const maxDy = Math.min(
+      ...state.drag.modules.map((item) => canvasSize.height - (item.y + moduleDisplayHeight(item.module))),
+    );
+    const clampedDx = Math.max(minDx, Math.min(maxDx, snappedDx));
+    const clampedDy = Math.max(minDy, Math.min(maxDy, snappedDy));
+
+    for (const item of state.drag.modules) {
+      item.module.x = item.x + clampedDx;
+      item.module.y = item.y + clampedDy;
+    }
   }
 
   renderCanvas();
@@ -458,6 +626,7 @@ async function loadState() {
   const response = await fetch("./api/overlay-state", { cache: "no-store" });
   state.overlay = await response.json();
   state.selectedId = state.overlay.modules[0]?.id || null;
+  state.selectedIds = new Set(state.selectedId ? [state.selectedId] : []);
   render();
 }
 
@@ -483,6 +652,7 @@ async function resetState() {
   const response = await fetch("./api/overlay-state/reset", { method: "POST" });
   state.overlay = await response.json();
   state.selectedId = state.overlay.modules[0]?.id || null;
+  state.selectedIds = new Set(state.selectedId ? [state.selectedId] : []);
   render();
 }
 
@@ -503,7 +673,6 @@ async function refreshOutput() {
   elements.seriesLength,
   elements.blueSeriesWins,
   elements.orangeSeriesWins,
-  elements.viewMode,
   elements.focusedPlayerId,
 ].forEach((input) => input.addEventListener("input", updateMeta));
 
@@ -512,13 +681,13 @@ async function refreshOutput() {
   elements.moduleY,
   elements.moduleW,
   elements.moduleH,
+  elements.moduleTeam,
 ].forEach((input) => input.addEventListener("input", updateSelectedModule));
 
 elements.saveButton.addEventListener("click", saveState);
 elements.refreshButton.addEventListener("click", refreshOutput);
 elements.resetButton.addEventListener("click", resetState);
 elements.toggleFocusButton.addEventListener("click", toggleFocusedView);
-elements.toggleRostersButton.addEventListener("click", toggleRosters);
 window.addEventListener("pointermove", onPointerMove);
 window.addEventListener("pointerup", onPointerUp);
 window.addEventListener("resize", renderCanvas);

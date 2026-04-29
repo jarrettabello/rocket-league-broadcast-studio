@@ -11,8 +11,9 @@ This is the larger broadcast-tool project. If you only want a small ball-speed o
 - Move, resize, hide, and show overlay modules
 - Scoreboard with series dots for best of 3, 5, or 7 and an optional producer title
 - Compact team roster modules with player names and live boost meters
+- Separate detailed roster modules with per-player stats
 - Ball speed module with team-colored animation based on last touch
-- Basic, expanded, and focused-player display modes
+- Focused-player module with producer-selected fallback
 - Output refresh command for OBS browser sources
 - Optional lobby ratings view using a local `mmr.json` file
 - No npm dependencies

@@ -25,7 +25,6 @@ const defaultOverlayState = {
     seriesLength: 5,
     blueSeriesWins: 0,
     orangeSeriesWins: 0,
-    viewMode: "basic",
     focusedPlayerId: "",
   },
   modules: [
@@ -51,7 +50,27 @@ const defaultOverlayState = {
       visible: true,
       settings: { team: 1 },
     },
-    { id: "team-totals", type: "teamTotals", x: 190, y: 748, w: 1220, h: 74, visible: false },
+    {
+      id: "blue-detailed-roster",
+      type: "detailedRoster",
+      x: 40,
+      y: 210,
+      w: 480,
+      h: 360,
+      visible: false,
+      settings: { team: 0 },
+    },
+    {
+      id: "orange-detailed-roster",
+      type: "detailedRoster",
+      x: 1080,
+      y: 210,
+      w: 480,
+      h: 360,
+      visible: false,
+      settings: { team: 1 },
+    },
+    { id: "team-totals", type: "teamTotals", x: 430, y: 748, w: 740, h: 74, visible: false, settings: { team: 0 } },
     { id: "focus-player", type: "focusedPlayer", x: 24, y: 828, w: 640, h: 54, visible: false },
   ],
 };
@@ -76,10 +95,18 @@ function readOverlayState() {
   try {
     const saved = JSON.parse(fs.readFileSync(statePath, "utf8"));
     const defaultState = cloneDefaultState();
+    const savedModules = Array.isArray(saved.modules) ? saved.modules : [];
+    const savedById = new Map(savedModules.map((module) => [module.id, module]));
+    const modules = [
+      ...savedModules,
+      ...defaultState.modules.filter((module) => !savedById.has(module.id)),
+    ];
+
     return {
       ...defaultState,
       ...saved,
       meta: { ...defaultState.meta, ...(saved.meta || {}) },
+      modules,
     };
   } catch {
     return cloneDefaultState();

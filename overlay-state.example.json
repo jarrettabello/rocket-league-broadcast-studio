@@ -6,7 +6,6 @@
     "seriesLength": 5,
     "blueSeriesWins": 0,
     "orangeSeriesWins": 0,
-    "viewMode": "basic",
     "focusedPlayerId": ""
   },
   "modules": [
@@ -53,13 +52,40 @@
       }
     },
     {
+      "id": "blue-detailed-roster",
+      "type": "detailedRoster",
+      "x": 40,
+      "y": 210,
+      "w": 480,
+      "h": 360,
+      "visible": false,
+      "settings": {
+        "team": 0
+      }
+    },
+    {
+      "id": "orange-detailed-roster",
+      "type": "detailedRoster",
+      "x": 1080,
+      "y": 210,
+      "w": 480,
+      "h": 360,
+      "visible": false,
+      "settings": {
+        "team": 1
+      }
+    },
+    {
       "id": "team-totals",
       "type": "teamTotals",
-      "x": 190,
+      "x": 430,
       "y": 748,
-      "w": 1220,
+      "w": 740,
       "h": 74,
-      "visible": false
+      "visible": false,
+      "settings": {
+        "team": 0
+      }
     },
     {
       "id": "focus-player",

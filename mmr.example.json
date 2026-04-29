@@ -1,0 +1,12 @@
+{
+  "Steam|76561198000000000|0": {
+    "rating": 1525,
+    "rank": "Grand Champion I",
+    "playlist": "Doubles"
+  },
+  "Example Player": {
+    "rating": 1042,
+    "rank": "Diamond II",
+    "playlist": "Standard"
+  }
+}

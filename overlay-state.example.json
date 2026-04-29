@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "matchTitle": "",
+    "blueName": "",
+    "orangeName": "",
+    "seriesLength": 5,
+    "blueSeriesWins": 0,
+    "orangeSeriesWins": 0,
+    "viewMode": "basic",
+    "focusedPlayerId": ""
+  },
+  "modules": [
+    {
+      "id": "scoreboard",
+      "type": "scoreboard",
+      "x": 440,
+      "y": 54,
+      "w": 720,
+      "h": 105,
+      "visible": true
+    },
+    {
+      "id": "ball-speed",
+      "type": "ballSpeed",
+      "x": 1360,
+      "y": 760,
+      "w": 210,
+      "h": 92,
+      "visible": true
+    },
+    {
+      "id": "blue-roster",
+      "type": "roster",
+      "x": 18,
+      "y": 54,
+      "w": 320,
+      "h": 118,
+      "visible": true,
+      "settings": {
+        "team": 0
+      }
+    },
+    {
+      "id": "orange-roster",
+      "type": "roster",
+      "x": 1262,
+      "y": 54,
+      "w": 320,
+      "h": 118,
+      "visible": true,
+      "settings": {
+        "team": 1
+      }
+    },
+    {
+      "id": "team-totals",
+      "type": "teamTotals",
+      "x": 190,
+      "y": 748,
+      "w": 1220,
+      "h": 74,
+      "visible": false
+    },
+    {
+      "id": "focus-player",
+      "type": "focusedPlayer",
+      "x": 24,
+      "y": 828,
+      "w": 640,
+      "h": 54,
+      "visible": false
+    }
+  ]
+}

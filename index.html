@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rocket League Broadcast Studio</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #080d13;
+        color: #f4f8ff;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at top left, rgba(21, 142, 255, 0.22), transparent 34rem),
+          radial-gradient(circle at bottom right, rgba(255, 132, 19, 0.18), transparent 30rem),
+          #080d13;
+      }
+
+      main {
+        width: min(720px, calc(100vw - 40px));
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2rem, 6vw, 4rem);
+        line-height: 0.95;
+      }
+
+      p {
+        color: #aebbd0;
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      a {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        color: #f4f8ff;
+        text-decoration: none;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      a:hover {
+        border-color: rgba(255, 255, 255, 0.36);
+        background: rgba(255, 255, 255, 0.12);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Rocket League Broadcast Studio</h1>
+      <p>
+        Producer-controlled Rocket League overlays for OBS. Open the studio in a browser and
+        add the output page as a transparent OBS Browser Source.
+      </p>
+      <nav aria-label="Project views">
+        <a href="./studio.html">Open Studio</a>
+        <a href="./output.html">Open OBS Output</a>
+        <a href="./lobby.html">Open Lobby Ratings</a>
+      </nav>
+    </main>
+  </body>
+</html>

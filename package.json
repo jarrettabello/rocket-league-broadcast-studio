@@ -1,0 +1,23 @@
+{
+  "name": "rocket-league-broadcast-studio",
+  "version": "0.1.0",
+  "description": "A local producer-controlled Rocket League broadcast overlay studio for OBS.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check studio.js && node --check output.js && node --check lobby.js"
+  },
+  "keywords": [
+    "rocket-league",
+    "broadcast",
+    "obs",
+    "overlay",
+    "streaming",
+    "stats-api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rocket League Broadcast Studio</title>
+    <link rel="stylesheet" href="./studio.css" />
+  </head>
+  <body>
+    <aside class="panel">
+      <header>
+        <p>Rocket League Broadcast</p>
+        <h1>Overlay Studio</h1>
+      </header>
+
+      <section>
+        <h2>Match</h2>
+        <button class="group-toggle" id="toggleFocusButton" type="button">Switch to Focus</button>
+        <label>Scoreboard Title <input id="matchTitle" type="text" placeholder="Fall Major | Swiss Stage | Round 2" /></label>
+        <label>Blue Team <input id="blueName" type="text" /></label>
+        <label>Orange Team <input id="orangeName" type="text" /></label>
+        <label>Series
+          <select id="seriesLength">
+            <option value="3">Best of 3</option>
+            <option value="5">Best of 5</option>
+            <option value="7">Best of 7</option>
+          </select>
+        </label>
+        <div class="split">
+          <label>Blue Wins <input id="blueSeriesWins" type="number" min="0" max="4" /></label>
+          <label>Orange Wins <input id="orangeSeriesWins" type="number" min="0" max="4" /></label>
+        </div>
+        <label>View Mode
+          <select id="viewMode">
+            <option value="basic">Basic Stats</option>
+            <option value="expanded">Expanded Stats</option>
+            <option value="focus">Focused Player</option>
+          </select>
+        </label>
+        <label>Focused Player
+          <select id="focusedPlayerId"></select>
+        </label>
+      </section>
+
+      <section>
+        <h2>Modules</h2>
+        <button class="group-toggle" id="toggleRostersButton" type="button">Hide Rosters</button>
+        <div class="module-list" id="moduleList"></div>
+      </section>
+
+      <section>
+        <h2>Selected</h2>
+        <p class="hint" id="selectedHint">Select a module on the canvas.</p>
+        <div class="selected-form" id="selectedForm" hidden>
+          <div class="split">
+            <label>X <input id="moduleX" type="number" /></label>
+            <label>Y <input id="moduleY" type="number" /></label>
+          </div>
+          <div class="split">
+            <label>Width <input id="moduleW" type="number" /></label>
+            <label>Height <input id="moduleH" type="number" /></label>
+          </div>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button id="saveButton" type="button">Save Layout</button>
+        <button id="refreshButton" type="button">Refresh Output</button>
+        <button id="resetButton" type="button">Reset</button>
+        <a href="./output.html" target="_blank">Open OBS Output</a>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <div class="toolbar">
+        <strong id="connectionStatus">Connecting</strong>
+        <span>Canvas: 1600 x 900</span>
+      </div>
+      <section class="canvas-wrap">
+        <div class="canvas" id="canvas"></div>
+      </section>
+    </main>
+
+    <script src="./studio.js"></script>
+  </body>
+</html>

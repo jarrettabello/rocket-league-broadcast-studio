@@ -318,7 +318,6 @@ function scoreboard(module) {
 
   return `
     <section class="${moduleClass(module, "scoreboard")}" data-module-id="${module.id}" style="${moduleStyle(module)}${teamColorVars(blue, orange)}">
-      <img class="scoreboard-shell-art" src="./assets/scoreboard-shell-cropped.png" alt="" aria-hidden="true" />
       <svg class="scoreboard-art" viewBox="0 0 1080 140" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="scoreGlass" x1="0" x2="0" y1="0" y2="1">

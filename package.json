@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check studio.js && node --check output.js && node --check lobby.js"
+    "check": "node --check server.js && node --check studio.js && node --check output.js"
   },
   "keywords": [
     "rocket-league",

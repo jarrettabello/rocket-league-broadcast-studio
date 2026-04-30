@@ -2,7 +2,7 @@
 
 A local producer-controlled broadcast overlay for Rocket League streams. It reads the Rocket League Stats API, gives a producer a live control panel, and serves a transparent OBS output page.
 
-![Producer panel](assets/screenshots/producer-panel.png)
+[Watch the demo on YouTube](https://www.youtube.com/watch?v=7hOhQyc2AQY)
 
 ## Features
 
@@ -19,22 +19,27 @@ A local producer-controlled broadcast overlay for Rocket League streams. It read
 - Automatic goal celebration screen with scorer name and animated module transitions
 - Module groups with group-level and individual visibility toggles
 - Output refresh command for OBS browser sources
-- Optional lobby ratings view using a local `mmr.json` file
 - No npm dependencies
 
 ## Screenshots
 
-### Producer Panel
+### Producer View
 
 Use this page outside OBS to control the stream overlay.
 
-![Producer panel](assets/screenshots/producer-panel.png)
+![Producer view](assets/rlbcs-producer-view.png)
 
-### OBS Output
+### In-Game View
+
+The live Rocket League view with the broadcast overlay in context.
+
+![In-game view](assets/rlbcs-in-game.png)
+
+### Overlay Output
 
 Use this transparent page as the OBS Browser Source.
 
-![Output view](assets/screenshots/output-view.png)
+![Overlay output](assets/rlbcs-overlay.png)
 
 ## Requirements
 
@@ -138,7 +143,7 @@ The preview canvas represents a `1600x900` overlay stage.
 - Press the arrow keys with multiple modules highlighted to nudge the whole group one grid box.
 - Click the floating `H` button to center the module horizontally.
 - Click the floating `V` button to center the module vertically.
-- Compact roster modules include a floating `S` button to match the other roster size.
+- Compact and detailed roster modules include a floating `S` button to match the other roster of the same type.
 
 The same controls are summarized in the legend underneath the preview canvas. The floating `H`, `V`, and `S` buttons appear when a module is selected or hovered; when a module is near the top edge, those buttons appear underneath it so they remain clickable.
 
@@ -252,12 +257,6 @@ http://127.0.0.1:5173/output.html
 
 Clean transparent overlay output. Use this in OBS.
 
-```text
-http://127.0.0.1:5173/lobby.html
-```
-
-Optional lobby ratings view. Rocket League's Stats API does not expose MMR, so this page only shows ratings if you provide a local `mmr.json`.
-
 ## Local State
 
 The producer layout is saved to:
@@ -273,16 +272,6 @@ overlay-state.example.json
 ```
 
 To reset from the producer panel, click `Reset`.
-
-## Lobby Ratings
-
-The official Rocket League Stats API does not expose player MMR in live packets. To show known ratings in the optional lobby view, copy:
-
-```powershell
-Copy-Item mmr.example.json mmr.json
-```
-
-Then edit `mmr.json` with player names or `PrimaryId` values. `mmr.json` is ignored by git.
 
 ## Configuration
 
@@ -314,9 +303,8 @@ Project files:
 - `server.js`: local TCP-to-websocket bridge, static server, and producer-state API
 - `studio.html`, `studio.js`, `studio.css`: producer control panel and layout editor
 - `output.html`, `output.js`, `output.css`: transparent OBS output
-- `lobby.html`, `lobby.js`, `lobby.css`: optional lobby ratings view
 - `overlay-state.example.json`: starter producer layout
-- `assets/`: visual assets and README screenshots
+- `assets/`: visual assets and README images
 
 ## Disclaimer
 

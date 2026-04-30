@@ -133,14 +133,18 @@ function centerModule(moduleId, axis) {
   markDirty();
 }
 
+function isRosterModule(module) {
+  return module?.type === "roster" || module?.type === "detailedRoster";
+}
+
 function counterpartRoster(module) {
-  if (module?.type !== "roster") {
+  if (!isRosterModule(module)) {
     return null;
   }
 
   const team = module.settings?.team || 0;
   return state.overlay.modules.find(
-    (item) => item.type === "roster" && (item.settings?.team || 0) !== team,
+    (item) => item.type === module.type && (item.settings?.team || 0) !== team,
   );
 }
 
@@ -395,12 +399,12 @@ function renderCanvas() {
 
     tools.append(centerX, centerY);
 
-    if (module.type === "roster") {
+    if (isRosterModule(module)) {
       const sync = document.createElement("button");
       sync.type = "button";
       sync.className = "center-tool sync-tool";
       sync.title = "Match other roster size";
-      sync.setAttribute("aria-label", `Sync ${moduleLabel(module)} size to the other roster`);
+      sync.setAttribute("aria-label", `Sync ${moduleLabel(module)} size to the other ${module.type === "detailedRoster" ? "detailed roster" : "roster"}`);
       sync.textContent = "S";
       sync.addEventListener("pointerdown", (event) => event.stopPropagation());
       sync.addEventListener("click", (event) => {

@@ -97,6 +97,18 @@ Preview the output page with a generated no-HUD arena frame:
 http://127.0.0.1:5173/output.html?previewBackground=1
 ```
 
+Log output websocket traffic in the browser console:
+
+```text
+http://127.0.0.1:5173/output.html?debug=1
+```
+
+You can combine both options:
+
+```text
+http://127.0.0.1:5173/output.html?previewBackground=1&debug=1
+```
+
 Recommended OBS Browser Source size:
 
 ```text
@@ -244,6 +256,7 @@ Suggested OBS settings:
 
 - Enable transparency.
 - Keep the normal `output.html` URL in OBS. The `?previewBackground=1` URL is for local browser previewing without the game running.
+- Use `?debug=1` only while diagnosing events; it logs Rocket League and overlay websocket messages to the browser console.
 - Do not scale the source up if avoidable.
 - If the output looks stale after layout changes, click `Refresh Output` in the producer panel.
 - If OBS is still stale, right-click the Browser Source and choose **Refresh cache of current page**.

@@ -3,14 +3,13 @@ const scoreboardAspect = 1983 / 290;
 const outputParams = new URLSearchParams(window.location.search);
 const previewBackgroundEnabled =
   outputParams.get("previewBackground") === "1" || outputParams.get("preview") === "background";
+const debugEnabled = outputParams.get("debug") === "1" || outputParams.get("debug") === "true";
 const state = {
   overlay: null,
   latest: null,
   clock: {
     timeSeconds: null,
     bOvertime: false,
-    syncedAt: 0,
-    isLive: false,
   },
   rlSocket: null,
   stateSocket: null,
@@ -24,6 +23,14 @@ const state = {
 
 if (previewBackgroundEnabled) {
   document.body.dataset.previewBackground = "true";
+}
+
+function debugLog(label, value) {
+  if (!debugEnabled) {
+    return;
+  }
+
+  console.log(`[RLB Studio Output] ${label}`, value);
 }
 
 function wsUrl(path) {
@@ -53,31 +60,16 @@ function displayClockSeconds() {
     return state.latest?.Game?.TimeSeconds;
   }
 
-  if (!state.clock.isLive) {
-    return state.clock.timeSeconds;
-  }
-
-  const elapsed = (Date.now() - state.clock.syncedAt) / 1000;
-
-  if (state.clock.bOvertime) {
-    return state.clock.timeSeconds + elapsed;
-  }
-
-  return Math.max(0, state.clock.timeSeconds - elapsed);
+  return state.clock.timeSeconds;
 }
 
-function syncClock(timeSeconds, bOvertime, options = {}) {
+function syncClock(timeSeconds, bOvertime) {
   if (!Number.isFinite(Number(timeSeconds))) {
     return;
   }
 
   state.clock.timeSeconds = Number(timeSeconds);
   state.clock.bOvertime = Boolean(bOvertime);
-  state.clock.syncedAt = Date.now();
-
-  if (typeof options.isLive === "boolean") {
-    state.clock.isLive = options.isLive;
-  }
 }
 
 function formatClock(seconds) {
@@ -799,8 +791,11 @@ async function loadInitialState() {
 
 function connectRocketLeague() {
   state.rlSocket = new WebSocket(wsUrl("/rl"));
+  state.rlSocket.addEventListener("open", () => debugLog("rocket-league socket open", wsUrl("/rl")));
   state.rlSocket.addEventListener("message", (event) => {
+    debugLog("rocket-league raw message", event.data);
     const message = parseMessage(event);
+    debugLog("rocket-league parsed message", message);
 
     if (message?.Event === "UpdateState") {
       state.latest = message.Data;
@@ -812,13 +807,13 @@ function connectRocketLeague() {
     showGoalCelebration(explicitGoalInfo(message));
 
     if (message?.Event === "CountdownBegin" || message?.Event === "MatchInitialized") {
-      syncClock(state.latest?.Game?.TimeSeconds ?? 300, state.latest?.Game?.bOvertime, { isLive: false });
+      syncClock(state.latest?.Game?.TimeSeconds ?? 300, state.latest?.Game?.bOvertime);
       render();
       return;
     }
 
     if (message?.Event === "RoundStarted" || message?.Event === "MatchUnpaused") {
-      syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime, { isLive: true });
+      syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime);
       render();
       return;
     }
@@ -831,7 +826,7 @@ function connectRocketLeague() {
       message?.Event === "PodiumStart" ||
       message?.Event === "MatchDestroyed"
     ) {
-      syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime, { isLive: false });
+      syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime);
       render();
       return;
     }
@@ -845,13 +840,20 @@ function connectRocketLeague() {
       render();
     }
   });
-  state.rlSocket.addEventListener("close", () => window.setTimeout(connectRocketLeague, 1200));
+  state.rlSocket.addEventListener("close", (event) => {
+    debugLog("rocket-league socket close", { code: event.code, reason: event.reason });
+    window.setTimeout(connectRocketLeague, 1200);
+  });
 }
 
 function connectOverlayState() {
   state.stateSocket = new WebSocket(wsUrl("/overlay-state"));
+  state.stateSocket.addEventListener("open", () => debugLog("overlay-state socket open", wsUrl("/overlay-state")));
   state.stateSocket.addEventListener("message", (event) => {
+    debugLog("overlay-state raw message", event.data);
     const message = parseMessage(event);
+    debugLog("overlay-state parsed message", message);
+
     if (message?.type === "overlayState") {
       state.overlay = message.state;
       render();
@@ -865,7 +867,10 @@ function connectOverlayState() {
       showGoalCelebration(message.goal, { force: true });
     }
   });
-  state.stateSocket.addEventListener("close", () => window.setTimeout(connectOverlayState, 1200));
+  state.stateSocket.addEventListener("close", (event) => {
+    debugLog("overlay-state socket close", { code: event.code, reason: event.reason });
+    window.setTimeout(connectOverlayState, 1200);
+  });
 }
 
 loadInitialState();

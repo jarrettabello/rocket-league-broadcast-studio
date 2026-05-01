@@ -841,7 +841,7 @@ function connectRocketLeague() {
       state.latest.Game = state.latest.Game || {};
       state.latest.Game.TimeSeconds = message.Data?.TimeSeconds;
       state.latest.Game.bOvertime = message.Data?.bOvertime;
-      syncClock(message.Data?.TimeSeconds, message.Data?.bOvertime, { isLive: true });
+      syncClock(message.Data?.TimeSeconds, message.Data?.bOvertime);
       render();
     }
   });

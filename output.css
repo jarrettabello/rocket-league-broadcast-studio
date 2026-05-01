@@ -33,6 +33,20 @@ body {
   background: transparent;
 }
 
+.output-viewport::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  display: none;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)),
+    url("./assets/output-preview-background.png") center / cover no-repeat;
+}
+
+body[data-preview-background="true"] .output-viewport::before {
+  display: block;
+}
+
 .stage {
   position: absolute;
   left: 0;
@@ -567,6 +581,7 @@ body {
   height: 100%;
   display: grid;
   align-items: center;
+  grid-template-columns: minmax(0, 1fr);
   border: 0;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.24),
@@ -585,25 +600,33 @@ body {
 }
 
 .team-plate-blue {
-  padding: 0 16% 0 8%;
+  justify-items: end;
+  padding: 0 10% 0 14%;
   clip-path: none;
   color: var(--blue-primary);
   border-color: var(--blue-primary);
+  --team-name-scale: var(--blue-team-name-scale, 1);
 }
 
 .team-plate-orange {
-  padding: 0 8% 0 16%;
+  justify-items: start;
+  padding: 0 14% 0 10%;
   clip-path: none;
   color: var(--orange-primary);
   border-color: var(--orange-primary);
+  --team-name-scale: var(--orange-team-name-scale, 1);
 }
 
 .team-plate-v2 span {
   position: relative;
   z-index: 5;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   overflow: hidden;
   color: #f8fbff;
-  font-size: clamp(18px, 2.85cqw, 36px);
+  font-size: clamp(8px, calc(2.85cqw * var(--team-name-scale, 1)), calc(36px * var(--team-name-scale, 1)));
   font-weight: 950;
   text-overflow: ellipsis;
   text-shadow:
@@ -615,6 +638,10 @@ body {
 
 .team-plate-blue span {
   text-align: right;
+}
+
+.team-plate-orange span {
+  text-align: left;
 }
 
 .score-tile-v2 {
@@ -1040,7 +1067,14 @@ body {
   overflow: hidden;
   color: var(--team-secondary, #ffffff);
   background: var(--team-primary);
-  font-size: clamp(16px, min(4cqw, 38cqh), 28px);
+}
+
+.total-name span {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: clamp(8px, calc(min(4cqw, 38cqh) * var(--team-name-scale, 1)), calc(28px * var(--team-name-scale, 1)));
   font-weight: 950;
   text-overflow: ellipsis;
   text-shadow:
@@ -1051,8 +1085,27 @@ body {
 }
 
 .totals-orange {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 32%);
   border-right: 5px solid var(--team-primary);
   border-left: 0;
+}
+
+.totals-blue .total-name span {
+  text-align: right;
+}
+
+.totals-orange .total-name {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.totals-orange .total-name span {
+  text-align: left;
+}
+
+.totals-orange .total-stats {
+  grid-column: 1;
+  grid-row: 1;
 }
 
 .total-stats {

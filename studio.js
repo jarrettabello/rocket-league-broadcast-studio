@@ -17,6 +17,8 @@ const elements = {
   matchTitle: document.querySelector("#matchTitle"),
   blueName: document.querySelector("#blueName"),
   orangeName: document.querySelector("#orangeName"),
+  blueTeamFontScale: document.querySelector("#blueTeamFontScale"),
+  orangeTeamFontScale: document.querySelector("#orangeTeamFontScale"),
   seriesLength: document.querySelector("#seriesLength"),
   blueSeriesWins: document.querySelector("#blueSeriesWins"),
   orangeSeriesWins: document.querySelector("#orangeSeriesWins"),
@@ -429,6 +431,8 @@ function renderMetaForm() {
   elements.matchTitle.value = meta.matchTitle || "";
   elements.blueName.value = meta.blueName || "";
   elements.orangeName.value = meta.orangeName || "";
+  elements.blueTeamFontScale.value = meta.blueTeamFontScale || 100;
+  elements.orangeTeamFontScale.value = meta.orangeTeamFontScale || 100;
   elements.seriesLength.value = meta.seriesLength || 5;
   elements.blueSeriesWins.value = meta.blueSeriesWins || 0;
   elements.orangeSeriesWins.value = meta.orangeSeriesWins || 0;
@@ -500,6 +504,8 @@ function updateMeta() {
   Object.assign(state.overlay.meta, {
     blueName: elements.blueName.value,
     orangeName: elements.orangeName.value,
+    blueTeamFontScale: Number(elements.blueTeamFontScale.value || 100),
+    orangeTeamFontScale: Number(elements.orangeTeamFontScale.value || 100),
     matchTitle: elements.matchTitle.value,
     seriesLength: Number(elements.seriesLength.value || 5),
     blueSeriesWins: Number(elements.blueSeriesWins.value || 0),
@@ -748,6 +754,8 @@ async function previewGoal() {
 [
   elements.blueName,
   elements.orangeName,
+  elements.blueTeamFontScale,
+  elements.orangeTeamFontScale,
   elements.matchTitle,
   elements.seriesLength,
   elements.blueSeriesWins,

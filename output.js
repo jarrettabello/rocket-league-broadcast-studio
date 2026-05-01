@@ -1,5 +1,8 @@
 const stage = document.querySelector("#stage");
 const scoreboardAspect = 1983 / 290;
+const outputParams = new URLSearchParams(window.location.search);
+const previewBackgroundEnabled =
+  outputParams.get("previewBackground") === "1" || outputParams.get("preview") === "background";
 const state = {
   overlay: null,
   latest: null,
@@ -7,6 +10,7 @@ const state = {
     timeSeconds: null,
     bOvertime: false,
     syncedAt: 0,
+    isLive: false,
   },
   rlSocket: null,
   stateSocket: null,
@@ -17,6 +21,10 @@ const state = {
     timer: null,
   },
 };
+
+if (previewBackgroundEnabled) {
+  document.body.dataset.previewBackground = "true";
+}
 
 function wsUrl(path) {
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -45,6 +53,10 @@ function displayClockSeconds() {
     return state.latest?.Game?.TimeSeconds;
   }
 
+  if (!state.clock.isLive) {
+    return state.clock.timeSeconds;
+  }
+
   const elapsed = (Date.now() - state.clock.syncedAt) / 1000;
 
   if (state.clock.bOvertime) {
@@ -54,7 +66,7 @@ function displayClockSeconds() {
   return Math.max(0, state.clock.timeSeconds - elapsed);
 }
 
-function syncClock(timeSeconds, bOvertime) {
+function syncClock(timeSeconds, bOvertime, options = {}) {
   if (!Number.isFinite(Number(timeSeconds))) {
     return;
   }
@@ -62,6 +74,10 @@ function syncClock(timeSeconds, bOvertime) {
   state.clock.timeSeconds = Number(timeSeconds);
   state.clock.bOvertime = Boolean(bOvertime);
   state.clock.syncedAt = Date.now();
+
+  if (typeof options.isLive === "boolean") {
+    state.clock.isLive = options.isLive;
+  }
 }
 
 function formatClock(seconds) {
@@ -120,12 +136,26 @@ function normalizeTeamColor(value, fallback) {
 }
 
 function teamColorVars(blue, orange) {
+  const meta = state.overlay?.meta || {};
+
   return [
     `--blue-primary:${blue.primary}`,
     `--blue-secondary:${blue.secondary}`,
     `--orange-primary:${orange.primary}`,
     `--orange-secondary:${orange.secondary}`,
+    `--blue-team-name-scale:${teamNameScale(meta.blueTeamFontScale)}`,
+    `--orange-team-name-scale:${teamNameScale(meta.orangeTeamFontScale)}`,
   ].join(";");
+}
+
+function teamNameScale(value) {
+  const scale = Number(value || 100) / 100;
+
+  if (!Number.isFinite(scale)) {
+    return 1;
+  }
+
+  return Math.max(0.25, Math.min(1.2, scale));
 }
 
 function playersForTeam(teamNum) {
@@ -438,8 +468,8 @@ function scoreboardV2(module) {
     <section class="${moduleClass(module, "scoreboard scoreboard-v2")}" data-module-id="${module.id}" style="${moduleStyle(module)}${teamColorVars(blue, orange)}">
       ${matchTitle ? `<div class="scoreboard-title-v2">${matchTitle}</div>` : ""}
       <div class="scorebug-v2">
-        <div class="team-plate-v2 team-plate-blue">
-          <span>${blue.name}</span>
+        <div class="team-plate-v2 team-plate-blue" data-fit-team-name-container>
+          <span data-fit-team-name title="${blue.name}">${blue.name}</span>
         </div>
         <div class="score-tile-v2 score-tile-blue">
           <span>${blue.score}</span>
@@ -451,8 +481,8 @@ function scoreboardV2(module) {
         <div class="score-tile-v2 score-tile-orange">
           <span>${orange.score}</span>
         </div>
-        <div class="team-plate-v2 team-plate-orange">
-          <span>${orange.name}</span>
+        <div class="team-plate-v2 team-plate-orange" data-fit-team-name-container>
+          <span data-fit-team-name title="${orange.name}">${orange.name}</span>
         </div>
       </div>
     </section>
@@ -530,6 +560,8 @@ function teamTotals(module) {
   const team = module.settings?.team || 0;
   const teamInfo = team === 1 ? orange : blue;
   const teamClass = team === 1 ? "orange" : "blue";
+  const meta = state.overlay?.meta || {};
+  const teamScale = teamNameScale(team === 1 ? meta.orangeTeamFontScale : meta.blueTeamFontScale);
   const totals = playerTotals(playersForTeam(team));
   const stats = [
     ["Goals", totals.goals],
@@ -539,8 +571,8 @@ function teamTotals(module) {
   ];
 
   return `
-    <section class="${moduleClass(module, `team-totals totals-${teamClass}`)}" data-module-id="${module.id}" style="${moduleStyle(module)}--team-primary:${teamInfo.primary};--team-secondary:${teamInfo.secondary};">
-      <div class="total-name">${teamInfo.name}</div>
+    <section class="${moduleClass(module, `team-totals totals-${teamClass}`)}" data-module-id="${module.id}" style="${moduleStyle(module)}--team-primary:${teamInfo.primary};--team-secondary:${teamInfo.secondary};--team-name-scale:${teamScale};">
+      <div class="total-name" data-fit-team-name-container><span data-fit-team-name title="${teamInfo.name}">${teamInfo.name}</span></div>
       <div class="total-stats">
         ${stats.map(([label, value]) => `<span><strong>${value}</strong>${label}</span>`).join("")}
       </div>
@@ -727,6 +759,8 @@ function render() {
       state.renderedModules.delete(id);
     }, 720);
   }
+
+  window.requestAnimationFrame(fitTeamNameText);
 }
 
 function updateClockText() {
@@ -734,6 +768,26 @@ function updateClockText() {
 
   if (clock) {
     clock.textContent = formatClock(displayClockSeconds());
+  }
+}
+
+function fitTeamNameText() {
+  for (const name of stage.querySelectorAll("[data-fit-team-name]")) {
+    name.style.fontSize = "";
+    const plate = name.closest("[data-fit-team-name-container]");
+    const plateStyle = plate ? window.getComputedStyle(plate) : null;
+    const horizontalPadding = plateStyle
+      ? Number.parseFloat(plateStyle.paddingLeft) + Number.parseFloat(plateStyle.paddingRight)
+      : 0;
+    const availableWidth = plate ? Math.max(0, plate.clientWidth - horizontalPadding) : 0;
+
+    if (!plate || !availableWidth || name.scrollWidth <= availableWidth) {
+      continue;
+    }
+
+    const currentSize = Number.parseFloat(window.getComputedStyle(name).fontSize);
+    const targetSize = Math.max(8, currentSize * (availableWidth / name.scrollWidth));
+    name.style.fontSize = `${targetSize}px`;
   }
 }
 
@@ -757,12 +811,37 @@ function connectRocketLeague() {
 
     showGoalCelebration(explicitGoalInfo(message));
 
+    if (message?.Event === "CountdownBegin" || message?.Event === "MatchInitialized") {
+      syncClock(state.latest?.Game?.TimeSeconds ?? 300, state.latest?.Game?.bOvertime, { isLive: false });
+      render();
+      return;
+    }
+
+    if (message?.Event === "RoundStarted" || message?.Event === "MatchUnpaused") {
+      syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime, { isLive: true });
+      render();
+      return;
+    }
+
+    if (
+      message?.Event === "GoalScored" ||
+      message?.Event === "GoalReplayStart" ||
+      message?.Event === "MatchPaused" ||
+      message?.Event === "MatchEnded" ||
+      message?.Event === "PodiumStart" ||
+      message?.Event === "MatchDestroyed"
+    ) {
+      syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime, { isLive: false });
+      render();
+      return;
+    }
+
     if (message?.Event === "ClockUpdatedSeconds") {
       state.latest = state.latest || { Game: {} };
       state.latest.Game = state.latest.Game || {};
       state.latest.Game.TimeSeconds = message.Data?.TimeSeconds;
       state.latest.Game.bOvertime = message.Data?.bOvertime;
-      syncClock(message.Data?.TimeSeconds, message.Data?.bOvertime);
+      syncClock(message.Data?.TimeSeconds, message.Data?.bOvertime, { isLive: true });
       render();
     }
   });
@@ -794,4 +873,5 @@ connectRocketLeague();
 connectOverlayState();
 fitStage();
 window.addEventListener("resize", fitStage);
+window.addEventListener("resize", () => window.requestAnimationFrame(fitTeamNameText));
 window.setInterval(updateClockText, 250);

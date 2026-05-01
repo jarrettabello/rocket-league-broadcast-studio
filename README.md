@@ -91,6 +91,12 @@ Add this page as an OBS Browser Source:
 http://127.0.0.1:5173/output.html
 ```
 
+Preview the output page with a generated no-HUD arena frame:
+
+```text
+http://127.0.0.1:5173/output.html?previewBackground=1
+```
+
 Recommended OBS Browser Source size:
 
 ```text
@@ -111,6 +117,7 @@ Use the Match section for stream-level data:
 - `Show Focus` / `Hide Focus`: toggles the Focused Player module.
 - `Scoreboard Title`: optional title shown above the scoreboard. Leave this blank to hide the title in the output.
 - `Blue Team` and `Orange Team`: override team names from the Stats API.
+- `Blue Name Size` and `Orange Name Size`: adjust the team-name font scale from `25` to `120` for the scoreboard and Team Totals modules. Long names also auto-fit before truncating.
 - `Series`: choose best of 3, 5, or 7.
 - `Blue Wins` and `Orange Wins`: controls the scoreboard series dots.
 - `Focused Player`: choose a fallback player for the Focused Player module. `Auto` lets the overlay prefer the currently spectated player when the Stats API exposes one.
@@ -175,6 +182,8 @@ Most producer changes auto-save after a short delay. Use `Save Layout` when you 
 
 Shows team names, current score, game clock, series dots, and an optional title bar. The title is controlled by `Scoreboard Title` in the producer panel and is hidden when blank.
 
+The game clock freezes during pre-kickoff countdown, goal replays, pauses, and match-end states, then resumes live ticking when the Stats API reports active play.
+
 ### Compact Rosters
 
 Small side roster modules designed to sit near the scoreboard. They show:
@@ -234,6 +243,7 @@ Height: 900
 Suggested OBS settings:
 
 - Enable transparency.
+- Keep the normal `output.html` URL in OBS. The `?previewBackground=1` URL is for local browser previewing without the game running.
 - Do not scale the source up if avoidable.
 - If the output looks stale after layout changes, click `Refresh Output` in the producer panel.
 - If OBS is still stale, right-click the Browser Source and choose **Refresh cache of current page**.

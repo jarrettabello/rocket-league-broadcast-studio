@@ -22,6 +22,8 @@ const defaultOverlayState = {
     matchTitle: "",
     blueName: "",
     orangeName: "",
+    blueTeamFontScale: 100,
+    orangeTeamFontScale: 100,
     seriesLength: 5,
     blueSeriesWins: 0,
     orangeSeriesWins: 0,

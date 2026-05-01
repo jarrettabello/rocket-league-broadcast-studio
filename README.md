@@ -1,4 +1,5 @@
-# Rocket League Broadcast Studio
+# Rocket League Broadcast Studio 
+RLBS - Shoutout SunlessKhan
 
 A local producer-controlled broadcast overlay for Rocket League streams. It reads the Rocket League Stats API, gives a producer a live control panel, and serves a transparent OBS output page.
 

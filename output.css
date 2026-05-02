@@ -114,6 +114,147 @@ body[data-preview-background="true"] .output-viewport::before {
     filter 0.28s ease;
 }
 
+.kickoff-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 1;
+  transition:
+    opacity 0.24s ease,
+    filter 0.24s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kickoff-countdown::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 23%),
+    radial-gradient(circle, rgba(22, 140, 255, 0.32), transparent 47%),
+    radial-gradient(circle, rgba(255, 143, 31, 0.24), transparent 64%);
+  filter: blur(10px);
+  transform: translate(-50%, -50%);
+}
+
+.kickoff-countdown[data-motion-state="enter"],
+.kickoff-countdown[data-motion-state="exit"] {
+  opacity: 0;
+  filter: blur(8px);
+  transform: scale(1.08);
+}
+
+.kickoff-countdown[data-motion-state="visible"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+.kickoff-countdown-ring {
+  position: absolute;
+  width: 310px;
+  height: 310px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 42%),
+    rgba(3, 7, 12, 0.28);
+  box-shadow:
+    0 0 34px rgba(255, 255, 255, 0.16),
+    inset 0 0 42px rgba(255, 255, 255, 0.1);
+  animation: kickoff-ring-pulse 1s ease-out infinite;
+}
+
+.kickoff-countdown-ring::before,
+.kickoff-countdown-ring::after {
+  content: "";
+  position: absolute;
+  inset: -16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.kickoff-countdown-ring::before {
+  border-top-color: var(--blue);
+  border-right-color: rgba(22, 140, 255, 0.32);
+  filter: drop-shadow(0 0 14px var(--blue));
+  animation: kickoff-ring-spin 2.4s linear infinite;
+}
+
+.kickoff-countdown-ring::after {
+  border-bottom-color: var(--orange);
+  border-left-color: rgba(255, 143, 31, 0.32);
+  filter: drop-shadow(0 0 14px var(--orange));
+  animation: kickoff-ring-spin 2.4s linear infinite reverse;
+}
+
+.kickoff-countdown-number {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  min-width: 0;
+  max-width: 620px;
+  overflow: hidden;
+  font-size: 210px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.88;
+  text-align: center;
+  text-transform: uppercase;
+  text-shadow:
+    7px 7px 0 rgba(0, 0, 0, 0.86),
+    0 0 28px rgba(255, 255, 255, 0.42),
+    0 0 70px rgba(22, 140, 255, 0.34),
+    0 0 86px rgba(255, 143, 31, 0.28);
+}
+
+.kickoff-countdown-number.is-ticking {
+  animation: kickoff-number-pop 0.78s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes kickoff-number-pop {
+  0% {
+    opacity: 0;
+    transform: scale(1.7);
+    filter: blur(8px);
+  }
+
+  18% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  100% {
+    opacity: 0.88;
+    transform: scale(0.86);
+  }
+}
+
+@keyframes kickoff-ring-pulse {
+  0% {
+    transform: scale(0.92);
+  }
+
+  100% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes kickoff-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .goal-celebration {
   position: absolute;
   inset: 0;

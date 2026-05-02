@@ -4,6 +4,10 @@ const outputParams = new URLSearchParams(window.location.search);
 const previewBackgroundEnabled =
   outputParams.get("previewBackground") === "1" || outputParams.get("preview") === "background";
 const debugEnabled = outputParams.get("debug") === "1" || outputParams.get("debug") === "true";
+const kickoffCountdownDelayMs = 850;
+const kickoffCountdownStepMs = 1000;
+const kickoffCountdownGoMs = 720;
+const kickoffCountdownSteps = ["3", "2", "1"];
 const state = {
   overlay: null,
   latest: null,
@@ -18,6 +22,17 @@ const state = {
     active: false,
     node: null,
     timer: null,
+  },
+  kickoffCountdown: {
+    active: false,
+    node: null,
+    timer: null,
+    interval: null,
+    startTimer: null,
+    clearTimer: null,
+    startedAt: 0,
+    visibleStartedAt: 0,
+    currentValue: null,
   },
 };
 
@@ -673,6 +688,152 @@ function showGoalCelebration(goal, options = {}) {
   state.goal.timer = window.setTimeout(clearGoalCelebration, 3000);
 }
 
+function kickoffCountdownHtml(value) {
+  return `
+    <section class="kickoff-countdown" aria-label="Kickoff countdown">
+      <div class="kickoff-countdown-ring" aria-hidden="true"></div>
+      <div class="kickoff-countdown-number">${value}</div>
+    </section>
+  `;
+}
+
+function countdownValue(elapsedMs) {
+  if (elapsedMs < 0) {
+    return kickoffCountdownSteps[0];
+  }
+
+  const index = Math.floor(elapsedMs / kickoffCountdownStepMs);
+  return kickoffCountdownSteps[index] || null;
+}
+
+function updateKickoffCountdown() {
+  if (!state.kickoffCountdown.active || !state.kickoffCountdown.node) {
+    return;
+  }
+
+  const value = countdownValue(Date.now() - state.kickoffCountdown.visibleStartedAt);
+
+  if (!value) {
+    return;
+  }
+
+  if (state.kickoffCountdown.currentValue === value) {
+    return;
+  }
+
+  const number = state.kickoffCountdown.node.querySelector(".kickoff-countdown-number");
+  state.kickoffCountdown.currentValue = value;
+
+  if (number) {
+    number.textContent = value;
+    number.classList.remove("is-ticking");
+    void number.offsetWidth;
+    number.classList.add("is-ticking");
+  }
+}
+
+function showKickoffCountdown() {
+  clearKickoffCountdown({ immediate: true, reason: "restart" });
+
+  state.kickoffCountdown.active = true;
+  state.kickoffCountdown.startedAt = Date.now();
+  state.kickoffCountdown.startTimer = window.setTimeout(startKickoffCountdownVisual, kickoffCountdownDelayMs);
+  state.kickoffCountdown.timer = window.setTimeout(() => {
+    showKickoffGo({ reason: "timer-fallback" });
+  }, kickoffCountdownDelayMs + kickoffCountdownStepMs * kickoffCountdownSteps.length);
+}
+
+function startKickoffCountdownVisual() {
+  if (!state.kickoffCountdown.active || state.kickoffCountdown.node) {
+    return;
+  }
+
+  const initialValue = kickoffCountdownSteps[0];
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = kickoffCountdownHtml(initialValue);
+  const node = wrapper.firstElementChild;
+  node.dataset.motionState = "enter";
+  stage.append(node);
+
+  state.kickoffCountdown.node = node;
+  state.kickoffCountdown.visibleStartedAt = Date.now();
+  state.kickoffCountdown.currentValue = initialValue;
+  state.kickoffCountdown.interval = window.setInterval(updateKickoffCountdown, 80);
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      node.dataset.motionState = "visible";
+      node.querySelector(".kickoff-countdown-number")?.classList.add("is-ticking");
+    });
+  });
+}
+
+function setKickoffCountdownValue(value, reason) {
+  const number = state.kickoffCountdown.node?.querySelector(".kickoff-countdown-number");
+  state.kickoffCountdown.currentValue = value;
+
+  if (number) {
+    number.textContent = value;
+    number.classList.remove("is-ticking");
+    void number.offsetWidth;
+    number.classList.add("is-ticking");
+  }
+}
+
+function showKickoffGo(options = {}) {
+  if (!state.kickoffCountdown.active && !state.kickoffCountdown.node) {
+    return;
+  }
+
+  window.clearTimeout(state.kickoffCountdown.startTimer);
+  window.clearTimeout(state.kickoffCountdown.timer);
+  window.clearInterval(state.kickoffCountdown.interval);
+  state.kickoffCountdown.startTimer = null;
+  state.kickoffCountdown.timer = null;
+  state.kickoffCountdown.interval = null;
+
+  if (!state.kickoffCountdown.node) {
+    startKickoffCountdownVisual();
+  }
+
+  setKickoffCountdownValue("GO!", options.reason || "go");
+  window.clearTimeout(state.kickoffCountdown.clearTimer);
+  state.kickoffCountdown.clearTimer = window.setTimeout(
+    () => clearKickoffCountdown({ reason: options.reason || "go-complete" }),
+    kickoffCountdownGoMs,
+  );
+}
+
+function clearKickoffCountdown(options = {}) {
+  window.clearTimeout(state.kickoffCountdown.timer);
+  window.clearTimeout(state.kickoffCountdown.startTimer);
+  window.clearTimeout(state.kickoffCountdown.clearTimer);
+  window.clearInterval(state.kickoffCountdown.interval);
+  state.kickoffCountdown.timer = null;
+  state.kickoffCountdown.startTimer = null;
+  state.kickoffCountdown.clearTimer = null;
+  state.kickoffCountdown.interval = null;
+  state.kickoffCountdown.active = false;
+  state.kickoffCountdown.startedAt = 0;
+  state.kickoffCountdown.visibleStartedAt = 0;
+  state.kickoffCountdown.currentValue = null;
+
+  if (!state.kickoffCountdown.node) {
+    return;
+  }
+
+  const node = state.kickoffCountdown.node;
+  state.kickoffCountdown.node = null;
+
+  if (options.immediate) {
+    node.remove();
+    return;
+  }
+
+  node.dataset.motionState = "exit";
+  window.setTimeout(() => node.remove(), 280);
+}
+
 function shouldShowModule(module) {
   return module.visible && !state.goal.active;
 }
@@ -806,13 +967,29 @@ function connectRocketLeague() {
 
     showGoalCelebration(explicitGoalInfo(message));
 
-    if (message?.Event === "CountdownBegin" || message?.Event === "MatchInitialized") {
+    if (message?.Event === "CountdownBegin") {
+      showKickoffCountdown();
       syncClock(state.latest?.Game?.TimeSeconds ?? 300, state.latest?.Game?.bOvertime);
       render();
       return;
     }
 
-    if (message?.Event === "RoundStarted" || message?.Event === "MatchUnpaused") {
+    if (message?.Event === "MatchInitialized") {
+      clearKickoffCountdown({ reason: "match-initialized" });
+      syncClock(state.latest?.Game?.TimeSeconds ?? 300, state.latest?.Game?.bOvertime);
+      render();
+      return;
+    }
+
+    if (message?.Event === "RoundStarted") {
+      showKickoffGo({ reason: message.Event });
+      syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime);
+      render();
+      return;
+    }
+
+    if (message?.Event === "MatchUnpaused") {
+      clearKickoffCountdown({ reason: message.Event });
       syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime);
       render();
       return;
@@ -826,6 +1003,7 @@ function connectRocketLeague() {
       message?.Event === "PodiumStart" ||
       message?.Event === "MatchDestroyed"
     ) {
+      clearKickoffCountdown({ reason: message.Event });
       syncClock(state.latest?.Game?.TimeSeconds, state.latest?.Game?.bOvertime);
       render();
       return;

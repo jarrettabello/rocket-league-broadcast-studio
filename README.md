@@ -17,6 +17,7 @@ A local producer-controlled broadcast overlay for Rocket League streams. It read
 - Team Totals module for one selected team: goals, saves, assists, and demos
 - Focused Player lower-third module with producer-selected fallback
 - Ball speed badge using last-touch team color
+- Custom kickoff countdown overlay triggered by Rocket League's pre-kickoff countdown event
 - Automatic goal celebration screen with scorer name and animated module transitions
 - Module groups with group-level and individual visibility toggles
 - Output refresh command for OBS browser sources
@@ -241,6 +242,10 @@ A compact ball speed badge colored by the ball's last-touch team.
 ### Goal Celebration
 
 When a goal is detected, the normal overlay modules animate out, a large `GOAL` screen animates in with the scoring player name, then the celebration clears after 3 seconds and the regular modules return to their saved positions.
+
+### Kickoff Countdown
+
+When Rocket League reports its pre-kickoff countdown, the output page shows a custom full-screen `3`, `2`, `1` countdown over the broadcast feed. The countdown clears automatically when the round starts or when the match moves into replay, pause, or end states.
 
 ## OBS Setup
 

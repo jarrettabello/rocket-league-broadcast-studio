@@ -105,19 +105,26 @@ function teams() {
   const apiTeams = state.latest?.Game?.Teams || [];
   const blueApi = apiTeams.find((team) => team.TeamNum === 0) || apiTeams[0] || {};
   const orangeApi = apiTeams.find((team) => team.TeamNum === 1) || apiTeams[1] || {};
+  const meta = state.overlay?.meta || {};
+  const bluePrimary = normalizeTeamColor(blueApi.ColorPrimary, "#168cff");
+  const blueSecondary = normalizeTeamColor(blueApi.ColorSecondary, "#dff1ff");
+  const orangePrimary = normalizeTeamColor(orangeApi.ColorPrimary, "#ff8f1f");
+  const orangeSecondary = normalizeTeamColor(orangeApi.ColorSecondary, "#fff0df");
 
   return {
     blue: {
-      name: producerTeamName(state.overlay?.meta?.blueName, blueApi.Name, "Blue Team"),
+      name: producerTeamName(meta.blueName, blueApi.Name, "Blue Team"),
       score: blueApi.Score || 0,
-      primary: normalizeTeamColor(blueApi.ColorPrimary, "#168cff"),
-      secondary: normalizeTeamColor(blueApi.ColorSecondary, "#dff1ff"),
+      primary: meta.blueUseCustomColors ? normalizeTeamColor(meta.bluePrimaryColor, bluePrimary) : bluePrimary,
+      secondary: meta.blueUseCustomColors ? normalizeTeamColor(meta.blueSecondaryColor, blueSecondary) : blueSecondary,
     },
     orange: {
-      name: producerTeamName(state.overlay?.meta?.orangeName, orangeApi.Name, "Orange Team"),
+      name: producerTeamName(meta.orangeName, orangeApi.Name, "Orange Team"),
       score: orangeApi.Score || 0,
-      primary: normalizeTeamColor(orangeApi.ColorPrimary, "#ff8f1f"),
-      secondary: normalizeTeamColor(orangeApi.ColorSecondary, "#fff0df"),
+      primary: meta.orangeUseCustomColors ? normalizeTeamColor(meta.orangePrimaryColor, orangePrimary) : orangePrimary,
+      secondary: meta.orangeUseCustomColors
+        ? normalizeTeamColor(meta.orangeSecondaryColor, orangeSecondary)
+        : orangeSecondary,
     },
   };
 }
@@ -133,10 +140,24 @@ function producerTeamName(producerName, apiName, fallback) {
 }
 
 function normalizeTeamColor(value, fallback) {
-  const hex = String(value || "").trim().replace(/^#/, "");
+  const raw = String(value || "").trim();
+  const hex = raw.replace(/^#/, "");
+
+  if (/^[0-9a-f]{3}$/i.test(hex)) {
+    return `#${hex.split("").map((digit) => digit + digit).join("").toLowerCase()}`;
+  }
 
   if (/^[0-9a-f]{6}$/i.test(hex)) {
-    return `#${hex}`;
+    return `#${hex.toLowerCase()}`;
+  }
+
+  const rgb = raw.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);
+
+  if (rgb) {
+    const channels = rgb.slice(1, 4).map((channel) => Number(channel));
+    if (channels.every((channel) => Number.isInteger(channel) && channel >= 0 && channel <= 255)) {
+      return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+    }
   }
 
   return fallback;

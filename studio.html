@@ -24,6 +24,40 @@
           <label>Blue Name Size <input id="blueTeamFontScale" type="number" min="25" max="120" step="5" /></label>
           <label>Orange Name Size <input id="orangeTeamFontScale" type="number" min="25" max="120" step="5" /></label>
         </div>
+        <div class="team-color-editor">
+          <label class="toggle-setting"><input id="blueUseCustomColors" type="checkbox" /> Use custom blue colors</label>
+          <div class="split color-split">
+            <label>Blue Primary
+              <span class="color-control">
+                <input id="bluePrimaryColorPicker" type="color" />
+                <input id="bluePrimaryColor" type="text" placeholder="#168cff or rgb(22, 140, 255)" />
+              </span>
+            </label>
+            <label>Blue Accent
+              <span class="color-control">
+                <input id="blueSecondaryColorPicker" type="color" />
+                <input id="blueSecondaryColor" type="text" placeholder="#dff1ff or rgb(223, 241, 255)" />
+              </span>
+            </label>
+          </div>
+        </div>
+        <div class="team-color-editor">
+          <label class="toggle-setting"><input id="orangeUseCustomColors" type="checkbox" /> Use custom orange colors</label>
+          <div class="split color-split">
+            <label>Orange Primary
+              <span class="color-control">
+                <input id="orangePrimaryColorPicker" type="color" />
+                <input id="orangePrimaryColor" type="text" placeholder="#ff8f1f or rgb(255, 143, 31)" />
+              </span>
+            </label>
+            <label>Orange Accent
+              <span class="color-control">
+                <input id="orangeSecondaryColorPicker" type="color" />
+                <input id="orangeSecondaryColor" type="text" placeholder="#fff0df or rgb(255, 240, 223)" />
+              </span>
+            </label>
+          </div>
+        </div>
         <label>Series
           <select id="seriesLength">
             <option value="3">Best of 3</option>

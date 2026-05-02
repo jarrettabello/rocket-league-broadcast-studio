@@ -94,10 +94,45 @@ input[type="checkbox"] {
   min-height: 18px;
 }
 
+input[type="color"] {
+  min-width: 44px;
+  width: 44px;
+  padding: 4px;
+}
+
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+.team-color-editor {
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0d131b;
+}
+
+.team-color-editor label {
+  margin-bottom: 0;
+}
+
+.toggle-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.color-split {
+  gap: 8px;
+}
+
+.color-control {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
 }
 
 .module-list {

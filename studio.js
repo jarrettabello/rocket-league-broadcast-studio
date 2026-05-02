@@ -19,6 +19,16 @@ const elements = {
   orangeName: document.querySelector("#orangeName"),
   blueTeamFontScale: document.querySelector("#blueTeamFontScale"),
   orangeTeamFontScale: document.querySelector("#orangeTeamFontScale"),
+  blueUseCustomColors: document.querySelector("#blueUseCustomColors"),
+  bluePrimaryColorPicker: document.querySelector("#bluePrimaryColorPicker"),
+  bluePrimaryColor: document.querySelector("#bluePrimaryColor"),
+  blueSecondaryColorPicker: document.querySelector("#blueSecondaryColorPicker"),
+  blueSecondaryColor: document.querySelector("#blueSecondaryColor"),
+  orangeUseCustomColors: document.querySelector("#orangeUseCustomColors"),
+  orangePrimaryColorPicker: document.querySelector("#orangePrimaryColorPicker"),
+  orangePrimaryColor: document.querySelector("#orangePrimaryColor"),
+  orangeSecondaryColorPicker: document.querySelector("#orangeSecondaryColorPicker"),
+  orangeSecondaryColor: document.querySelector("#orangeSecondaryColor"),
   seriesLength: document.querySelector("#seriesLength"),
   blueSeriesWins: document.querySelector("#blueSeriesWins"),
   orangeSeriesWins: document.querySelector("#orangeSeriesWins"),
@@ -109,6 +119,36 @@ function moduleLabel(module) {
 
 function snap(value) {
   return Math.round(value / gridSize) * gridSize;
+}
+
+function normalizeColorInput(value, fallback) {
+  const raw = String(value || "").trim();
+  const hex = raw.replace(/^#/, "");
+
+  if (/^[0-9a-f]{3}$/i.test(hex)) {
+    return `#${hex.split("").map((digit) => digit + digit).join("").toLowerCase()}`;
+  }
+
+  if (/^[0-9a-f]{6}$/i.test(hex)) {
+    return `#${hex.toLowerCase()}`;
+  }
+
+  const rgb = raw.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);
+
+  if (rgb) {
+    const channels = rgb.slice(1, 4).map((channel) => Number(channel));
+    if (channels.every((channel) => Number.isInteger(channel) && channel >= 0 && channel <= 255)) {
+      return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+    }
+  }
+
+  return fallback;
+}
+
+function setColorControl(textInput, pickerInput, value) {
+  const color = normalizeColorInput(value, pickerInput.value || "#ffffff");
+  textInput.value = color;
+  pickerInput.value = color;
 }
 
 function moduleDisplayHeight(module) {
@@ -433,6 +473,12 @@ function renderMetaForm() {
   elements.orangeName.value = meta.orangeName || "";
   elements.blueTeamFontScale.value = meta.blueTeamFontScale || 100;
   elements.orangeTeamFontScale.value = meta.orangeTeamFontScale || 100;
+  elements.blueUseCustomColors.checked = Boolean(meta.blueUseCustomColors);
+  setColorControl(elements.bluePrimaryColor, elements.bluePrimaryColorPicker, meta.bluePrimaryColor || "#168cff");
+  setColorControl(elements.blueSecondaryColor, elements.blueSecondaryColorPicker, meta.blueSecondaryColor || "#dff1ff");
+  elements.orangeUseCustomColors.checked = Boolean(meta.orangeUseCustomColors);
+  setColorControl(elements.orangePrimaryColor, elements.orangePrimaryColorPicker, meta.orangePrimaryColor || "#ff8f1f");
+  setColorControl(elements.orangeSecondaryColor, elements.orangeSecondaryColorPicker, meta.orangeSecondaryColor || "#fff0df");
   elements.seriesLength.value = meta.seriesLength || 5;
   elements.blueSeriesWins.value = meta.blueSeriesWins || 0;
   elements.orangeSeriesWins.value = meta.orangeSeriesWins || 0;
@@ -506,6 +552,12 @@ function updateMeta() {
     orangeName: elements.orangeName.value,
     blueTeamFontScale: Number(elements.blueTeamFontScale.value || 100),
     orangeTeamFontScale: Number(elements.orangeTeamFontScale.value || 100),
+    blueUseCustomColors: elements.blueUseCustomColors.checked,
+    bluePrimaryColor: normalizeColorInput(elements.bluePrimaryColor.value, "#168cff"),
+    blueSecondaryColor: normalizeColorInput(elements.blueSecondaryColor.value, "#dff1ff"),
+    orangeUseCustomColors: elements.orangeUseCustomColors.checked,
+    orangePrimaryColor: normalizeColorInput(elements.orangePrimaryColor.value, "#ff8f1f"),
+    orangeSecondaryColor: normalizeColorInput(elements.orangeSecondaryColor.value, "#fff0df"),
     matchTitle: elements.matchTitle.value,
     seriesLength: Number(elements.seriesLength.value || 5),
     blueSeriesWins: Number(elements.blueSeriesWins.value || 0),
@@ -756,12 +808,31 @@ async function previewGoal() {
   elements.orangeName,
   elements.blueTeamFontScale,
   elements.orangeTeamFontScale,
+  elements.blueUseCustomColors,
+  elements.orangeUseCustomColors,
   elements.matchTitle,
   elements.seriesLength,
   elements.blueSeriesWins,
   elements.orangeSeriesWins,
   elements.focusedPlayerId,
 ].forEach((input) => input.addEventListener("input", updateMeta));
+
+[
+  [elements.bluePrimaryColorPicker, elements.bluePrimaryColor],
+  [elements.blueSecondaryColorPicker, elements.blueSecondaryColor],
+  [elements.orangePrimaryColorPicker, elements.orangePrimaryColor],
+  [elements.orangeSecondaryColorPicker, elements.orangeSecondaryColor],
+].forEach(([picker, text]) => {
+  picker.addEventListener("input", () => {
+    text.value = picker.value;
+    updateMeta();
+  });
+
+  text.addEventListener("change", () => {
+    setColorControl(text, picker, text.value);
+    updateMeta();
+  });
+});
 
 [
   elements.moduleX,

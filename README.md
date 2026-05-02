@@ -12,6 +12,7 @@ A local producer-controlled broadcast overlay for Rocket League streams. It read
 - Drag, resize, center, hide, and show overlay modules
 - Multi-select movement in the preview canvas with `Shift + click`, drag, and arrow-key nudging
 - Scoreboard with team names, scores, game clock, series dots, and optional title bar
+- Custom team primary/accent color overrides with hex or RGB input
 - Compact RLCS-style roster modules with player names, boost values, and boost bars
 - Separate detailed roster modules with per-player score, goals, saves, assists, and demos
 - Team Totals module for one selected team: goals, saves, assists, and demos
@@ -131,6 +132,7 @@ Use the Match section for stream-level data:
 - `Scoreboard Title`: optional title shown above the scoreboard. Leave this blank to hide the title in the output.
 - `Blue Team` and `Orange Team`: override team names from the Stats API.
 - `Blue Name Size` and `Orange Name Size`: adjust the team-name font scale from `25` to `120` for the scoreboard and Team Totals modules. Long names also auto-fit before truncating.
+- `Use custom blue/orange colors`: override Rocket League's team colors with producer-selected primary and accent colors. Color fields accept hex codes like `#168cff` or RGB values like `rgb(22, 140, 255)`.
 - `Series`: choose best of 3, 5, or 7.
 - `Blue Wins` and `Orange Wins`: controls the scoreboard series dots.
 - `Focused Player`: choose a fallback player for the Focused Player module. `Auto` lets the overlay prefer the currently spectated player when the Stats API exposes one.

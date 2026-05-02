@@ -114,12 +114,14 @@ function teams() {
   return {
     blue: {
       name: producerTeamName(meta.blueName, blueApi.Name, "Blue Team"),
+      logoUrl: normalizeLogoUrl(meta.blueLogoUrl),
       score: blueApi.Score || 0,
       primary: meta.blueUseCustomColors ? normalizeTeamColor(meta.bluePrimaryColor, bluePrimary) : bluePrimary,
       secondary: meta.blueUseCustomColors ? normalizeTeamColor(meta.blueSecondaryColor, blueSecondary) : blueSecondary,
     },
     orange: {
       name: producerTeamName(meta.orangeName, orangeApi.Name, "Orange Team"),
+      logoUrl: normalizeLogoUrl(meta.orangeLogoUrl),
       score: orangeApi.Score || 0,
       primary: meta.orangeUseCustomColors ? normalizeTeamColor(meta.orangePrimaryColor, orangePrimary) : orangePrimary,
       secondary: meta.orangeUseCustomColors
@@ -161,6 +163,51 @@ function normalizeTeamColor(value, fallback) {
   }
 
   return fallback;
+}
+
+function normalizeLogoUrl(value) {
+  const url = String(value || "").trim();
+
+  if (!url) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(url) || url.startsWith("./assets/") || url.startsWith("/assets/")) {
+    return url;
+  }
+
+  return "";
+}
+
+function escapeAttribute(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function teamLogo(team, side) {
+  if (!team.logoUrl) {
+    return `<div class="team-logo-slot team-logo-${side}" aria-hidden="true"></div>`;
+  }
+
+  return `
+    <div class="team-logo-slot team-logo-${side}">
+      <img src="${escapeAttribute(team.logoUrl)}" alt="" aria-hidden="true" data-preserve-image="team-logo-${side}" />
+    </div>
+  `;
+}
+
+function preserveStableImages(currentNode, nextNode) {
+  nextNode.querySelectorAll("img[data-preserve-image]").forEach((nextImage) => {
+    const key = nextImage.dataset.preserveImage;
+    const currentImage = currentNode.querySelector(`img[data-preserve-image="${CSS.escape(key)}"]`);
+
+    if (currentImage?.getAttribute("src") === nextImage.getAttribute("src")) {
+      nextImage.replaceWith(currentImage);
+    }
+  });
 }
 
 function teamColorVars(blue, orange) {
@@ -487,8 +534,12 @@ function scoreboardV2(module) {
   const orangeWins = Number(meta.orangeSeriesWins || 0);
   const seriesLength = Number(meta.seriesLength || 5);
   const dotCount = Math.max(1, seriesLength);
-  const dots = Array.from({ length: dotCount }, (_, index) => {
-    const className = index < blueWins ? "blue-win" : index >= dotCount - orangeWins ? "orange-win" : "";
+  const blueSeries = Array.from({ length: dotCount }, (_, index) => {
+    const className = index < blueWins ? "is-won" : "";
+    return `<span class="${className}"></span>`;
+  }).join("");
+  const orangeSeries = Array.from({ length: dotCount }, (_, index) => {
+    const className = index >= dotCount - orangeWins ? "is-won" : "";
     return `<span class="${className}"></span>`;
   }).join("");
 
@@ -496,6 +547,7 @@ function scoreboardV2(module) {
     <section class="${moduleClass(module, "scoreboard scoreboard-v2")}" data-module-id="${module.id}" style="${moduleStyle(module)}${teamColorVars(blue, orange)}">
       ${matchTitle ? `<div class="scoreboard-title-v2">${matchTitle}</div>` : ""}
       <div class="scorebug-v2">
+        ${teamLogo(blue, "blue")}
         <div class="team-plate-v2 team-plate-blue" data-fit-team-name-container>
           <span data-fit-team-name title="${blue.name}">${blue.name}</span>
         </div>
@@ -504,7 +556,6 @@ function scoreboardV2(module) {
         </div>
         <div class="clock-pod-v2">
           <div class="clock">${formatClock(displayClockSeconds())}</div>
-          <div class="series-dots">${dots}</div>
         </div>
         <div class="score-tile-v2 score-tile-orange">
           <span>${orange.score}</span>
@@ -512,7 +563,11 @@ function scoreboardV2(module) {
         <div class="team-plate-v2 team-plate-orange" data-fit-team-name-container>
           <span data-fit-team-name title="${orange.name}">${orange.name}</span>
         </div>
+        ${teamLogo(orange, "orange")}
       </div>
+      <div class="series-marker-bar series-marker-blue" aria-label="Blue series wins">${blueSeries}</div>
+      <div class="series-info">GAME ${Math.min(blueWins + orangeWins + 1, dotCount)} <span>|</span> BEST OF ${dotCount}</div>
+      <div class="series-marker-bar series-marker-orange" aria-label="Orange series wins">${orangeSeries}</div>
     </section>
   `;
 }
@@ -913,8 +968,11 @@ function render() {
           continue;
         }
 
-        existing.node.outerHTML = html;
-        const node = stage.querySelector(`[data-module-id="${module.id}"]`);
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html;
+        const node = wrapper.firstElementChild;
+        preserveStableImages(existing.node, node);
+        existing.node.replaceWith(node);
         node.dataset.motionState = "visible";
         state.renderedModules.set(module.id, { node, removeTimer: null, motionLockUntil: 0 });
       }

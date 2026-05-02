@@ -16,7 +16,13 @@ const elements = {
   connectionStatus: document.querySelector("#connectionStatus"),
   matchTitle: document.querySelector("#matchTitle"),
   blueName: document.querySelector("#blueName"),
+  blueLogoUrl: document.querySelector("#blueLogoUrl"),
+  blueLogoUpload: document.querySelector("#blueLogoUpload"),
+  clearBlueLogoButton: document.querySelector("#clearBlueLogoButton"),
   orangeName: document.querySelector("#orangeName"),
+  orangeLogoUrl: document.querySelector("#orangeLogoUrl"),
+  orangeLogoUpload: document.querySelector("#orangeLogoUpload"),
+  clearOrangeLogoButton: document.querySelector("#clearOrangeLogoButton"),
   blueTeamFontScale: document.querySelector("#blueTeamFontScale"),
   orangeTeamFontScale: document.querySelector("#orangeTeamFontScale"),
   blueUseCustomColors: document.querySelector("#blueUseCustomColors"),
@@ -149,6 +155,15 @@ function setColorControl(textInput, pickerInput, value) {
   const color = normalizeColorInput(value, pickerInput.value || "#ffffff");
   textInput.value = color;
   pickerInput.value = color;
+}
+
+function fileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", reject);
+    reader.readAsDataURL(file);
+  });
 }
 
 function moduleDisplayHeight(module) {
@@ -470,7 +485,9 @@ function renderMetaForm() {
   const meta = state.overlay.meta;
   elements.matchTitle.value = meta.matchTitle || "";
   elements.blueName.value = meta.blueName || "";
+  elements.blueLogoUrl.value = meta.blueLogoUrl || "";
   elements.orangeName.value = meta.orangeName || "";
+  elements.orangeLogoUrl.value = meta.orangeLogoUrl || "";
   elements.blueTeamFontScale.value = meta.blueTeamFontScale || 100;
   elements.orangeTeamFontScale.value = meta.orangeTeamFontScale || 100;
   elements.blueUseCustomColors.checked = Boolean(meta.blueUseCustomColors);
@@ -549,7 +566,9 @@ async function saveState() {
 function updateMeta() {
   Object.assign(state.overlay.meta, {
     blueName: elements.blueName.value,
+    blueLogoUrl: elements.blueLogoUrl.value.trim(),
     orangeName: elements.orangeName.value,
+    orangeLogoUrl: elements.orangeLogoUrl.value.trim(),
     blueTeamFontScale: Number(elements.blueTeamFontScale.value || 100),
     orangeTeamFontScale: Number(elements.orangeTeamFontScale.value || 100),
     blueUseCustomColors: elements.blueUseCustomColors.checked,
@@ -803,9 +822,42 @@ async function previewGoal() {
   }, 1200);
 }
 
+async function uploadTeamLogo(fileInput, urlInput) {
+  const file = fileInput.files?.[0];
+
+  if (!file) {
+    return;
+  }
+
+  const dataUrl = await fileAsDataUrl(file);
+  const response = await fetch("./api/team-logo-upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fileName: file.name, dataUrl }),
+  });
+
+  if (!response.ok) {
+    fileInput.value = "";
+    return;
+  }
+
+  const result = await response.json();
+  urlInput.value = result.url || "";
+  fileInput.value = "";
+  updateMeta();
+}
+
+function clearTeamLogo(urlInput, fileInput) {
+  urlInput.value = "";
+  fileInput.value = "";
+  updateMeta();
+}
+
 [
   elements.blueName,
+  elements.blueLogoUrl,
   elements.orangeName,
+  elements.orangeLogoUrl,
   elements.blueTeamFontScale,
   elements.orangeTeamFontScale,
   elements.blueUseCustomColors,
@@ -816,6 +868,17 @@ async function previewGoal() {
   elements.orangeSeriesWins,
   elements.focusedPlayerId,
 ].forEach((input) => input.addEventListener("input", updateMeta));
+
+elements.blueLogoUpload.addEventListener("change", () => uploadTeamLogo(elements.blueLogoUpload, elements.blueLogoUrl));
+elements.orangeLogoUpload.addEventListener("change", () =>
+  uploadTeamLogo(elements.orangeLogoUpload, elements.orangeLogoUrl),
+);
+elements.clearBlueLogoButton.addEventListener("click", () =>
+  clearTeamLogo(elements.blueLogoUrl, elements.blueLogoUpload),
+);
+elements.clearOrangeLogoButton.addEventListener("click", () =>
+  clearTeamLogo(elements.orangeLogoUrl, elements.orangeLogoUpload),
+);
 
 [
   [elements.bluePrimaryColorPicker, elements.bluePrimaryColor],

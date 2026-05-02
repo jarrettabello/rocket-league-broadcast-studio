@@ -19,7 +19,21 @@
         <button class="group-toggle" id="previewGoalButton" type="button">Preview Goal</button>
         <label>Scoreboard Title <input id="matchTitle" type="text" placeholder="Fall Major | Swiss Stage | Round 2" /></label>
         <label>Blue Team <input id="blueName" type="text" /></label>
+        <div class="team-logo-editor">
+          <label>Blue Logo URL <input id="blueLogoUrl" type="url" placeholder="https://example.com/blue-logo.png" /></label>
+          <div class="logo-actions">
+            <label class="file-picker-button">Upload Blue Logo <input id="blueLogoUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" /></label>
+            <button id="clearBlueLogoButton" type="button">Clear</button>
+          </div>
+        </div>
         <label>Orange Team <input id="orangeName" type="text" /></label>
+        <div class="team-logo-editor">
+          <label>Orange Logo URL <input id="orangeLogoUrl" type="url" placeholder="https://example.com/orange-logo.png" /></label>
+          <div class="logo-actions">
+            <label class="file-picker-button">Upload Orange Logo <input id="orangeLogoUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" /></label>
+            <button id="clearOrangeLogoButton" type="button">Clear</button>
+          </div>
+        </div>
         <div class="split">
           <label>Blue Name Size <input id="blueTeamFontScale" type="number" min="25" max="120" step="5" /></label>
           <label>Orange Name Size <input id="orangeTeamFontScale" type="number" min="25" max="120" step="5" /></label>

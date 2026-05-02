@@ -11,14 +11,15 @@ A local producer-controlled broadcast overlay for Rocket League streams. It read
 - Transparent OBS/browser-source output page
 - Drag, resize, center, hide, and show overlay modules
 - Multi-select movement in the preview canvas with `Shift + click`, drag, and arrow-key nudging
-- Scoreboard with team names, scores, game clock, series dots, and optional title bar
-- Custom team primary/accent color overrides with hex or RGB input
+- RLCS-inspired scoreboard with team logos, names, scores, game clock, team-specific series markers, and optional title bar
+- Team logo upload or web image URL support for scoreboard logo slots, with stable rendering during live updates
+- Custom team primary/accent color overrides with color pickers plus hex or RGB input
 - Compact RLCS-style roster modules with player names, boost values, and boost bars
 - Separate detailed roster modules with per-player score, goals, saves, assists, and demos
 - Team Totals module for one selected team: goals, saves, assists, and demos
 - Focused Player lower-third module with producer-selected fallback
 - Ball speed badge using last-touch team color
-- Custom kickoff countdown overlay triggered by Rocket League's pre-kickoff countdown event
+- Custom kickoff countdown overlay calibrated to Rocket League's pre-kickoff `3`, `2`, `1`, `GO!` cadence
 - Automatic goal celebration screen with scorer name and animated module transitions
 - Module groups with group-level and individual visibility toggles
 - Output refresh command for OBS browser sources
@@ -131,11 +132,16 @@ Use the Match section for stream-level data:
 - `Show Focus` / `Hide Focus`: toggles the Focused Player module.
 - `Scoreboard Title`: optional title shown above the scoreboard. Leave this blank to hide the title in the output.
 - `Blue Team` and `Orange Team`: override team names from the Stats API.
+- `Blue/Orange Logo URL`: paste an `https://` image URL or upload a PNG, JPG, WebP, GIF, or SVG logo from the producer panel. Uploaded logos are saved locally under `assets/uploads/` and referenced by the overlay state.
 - `Blue Name Size` and `Orange Name Size`: adjust the team-name font scale from `25` to `120` for the scoreboard and Team Totals modules. Long names also auto-fit before truncating.
-- `Use custom blue/orange colors`: override Rocket League's team colors with producer-selected primary and accent colors. Color fields accept hex codes like `#168cff` or RGB values like `rgb(22, 140, 255)`.
+- `Use custom blue/orange colors`: override Rocket League's team colors with producer-selected primary and accent colors. Use the color picker, paste a hex code like `#168cff`, or enter an RGB value like `rgb(22, 140, 255)`.
 - `Series`: choose best of 3, 5, or 7.
-- `Blue Wins` and `Orange Wins`: controls the scoreboard series dots.
+- `Blue Wins` and `Orange Wins`: controls the scoreboard series markers.
 - `Focused Player`: choose a fallback player for the Focused Player module. `Auto` lets the overlay prefer the currently spectated player when the Stats API exposes one.
+
+Team color overrides flow through the scoreboard, roster modules, Team Totals, ball speed badge, focus module, goal celebration, and other team-colored overlay surfaces. Leave custom colors disabled to use the colors reported by Rocket League.
+
+If a logo upload returns `404`, restart the local Node server. The upload endpoint is served by `server.js`, so an already-running server process needs a restart after pulling or editing that route.
 
 ### Modules
 
@@ -195,9 +201,15 @@ Most producer changes auto-save after a short delay. Use `Save Layout` when you 
 
 ### Scoreboard
 
-Shows team names, current score, game clock, series dots, and an optional title bar. The title is controlled by `Scoreboard Title` in the producer panel and is hidden when blank.
+Shows team logos, team names, current score, game clock, team-specific series markers, and an optional title bar. The title is controlled by `Scoreboard Title` in the producer panel and is hidden when blank.
+
+The current scoreboard layout is inspired by modern RLCS broadcasts: logos sit outside the team name plates, scores sit beside the central clock, and the series state is shown below the scorebug as team-colored marker bars with a centered `GAME X | BEST OF Y` label.
 
 The game clock freezes during pre-kickoff countdown, goal replays, pauses, and match-end states, then resumes live ticking when the Stats API reports active play.
+
+Team logos can come from either a web URL or a local upload. Local uploads are copied into `assets/uploads/`, which is ignored by git so each producer can keep their own local logo set. The overlay preserves unchanged logo image nodes during live redraws to avoid flicker in OBS.
+
+Custom team colors include a primary and accent color for each side. When enabled, those colors override Rocket League's reported team colors throughout the overlay.
 
 ### Compact Rosters
 
@@ -247,7 +259,9 @@ When a goal is detected, the normal overlay modules animate out, a large `GOAL` 
 
 ### Kickoff Countdown
 
-When Rocket League reports its pre-kickoff countdown, the output page shows a custom full-screen `3`, `2`, `1` countdown over the broadcast feed. The countdown clears automatically when the round starts or when the match moves into replay, pause, or end states.
+When Rocket League reports its pre-kickoff countdown, the output page shows a custom full-screen `3`, `2`, `1` countdown over the broadcast feed. The timing is calibrated against Rocket League's own kickoff countdown cadence so the custom countdown lands with the in-game sequence instead of racing ahead.
+
+The countdown clears automatically when the round starts or when the match moves into replay, pause, or end states.
 
 ## OBS Setup
 
@@ -266,6 +280,7 @@ Suggested OBS settings:
 - Use `?debug=1` only while diagnosing events; it logs Rocket League and overlay websocket messages to the browser console.
 - Do not scale the source up if avoidable.
 - If the output looks stale after layout changes, click `Refresh Output` in the producer panel.
+- If new server-backed features such as logo upload return `404`, stop and restart `npm start`.
 - If OBS is still stale, right-click the Browser Source and choose **Refresh cache of current page**.
 
 ## Project Views

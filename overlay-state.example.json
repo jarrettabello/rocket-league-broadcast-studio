@@ -11,6 +11,8 @@
     "orangeUseCustomColors": false,
     "orangePrimaryColor": "#ff8f1f",
     "orangeSecondaryColor": "#fff0df",
+    "blueLogoUrl": "",
+    "orangeLogoUrl": "",
     "seriesLength": 5,
     "blueSeriesWins": 0,
     "orangeSeriesWins": 0,

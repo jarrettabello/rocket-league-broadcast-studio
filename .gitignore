@@ -1,5 +1,6 @@
 node_modules/
 .env
 overlay-state.json
+assets/uploads/
 .DS_Store
 Thumbs.db

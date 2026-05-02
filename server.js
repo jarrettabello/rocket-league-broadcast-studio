@@ -9,6 +9,7 @@ const appPort = Number(process.env.PORT || 5173);
 const rocketLeaguePort = Number(process.env.RL_STATS_PORT || 49123);
 const root = path.resolve(__dirname);
 const statePath = path.join(root, "overlay-state.json");
+const logoUploadDir = path.join(root, "assets", "uploads", "team-logos");
 
 const rlClients = new Set();
 const overlayStateClients = new Set();
@@ -30,6 +31,8 @@ const defaultOverlayState = {
     orangeUseCustomColors: false,
     orangePrimaryColor: "#ff8f1f",
     orangeSecondaryColor: "#fff0df",
+    blueLogoUrl: "",
+    orangeLogoUrl: "",
     seriesLength: 5,
     blueSeriesWins: 0,
     orangeSeriesWins: 0,
@@ -139,7 +142,7 @@ function readRequestJson(request) {
 
     request.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 8_000_000) {
         reject(new Error("Request body too large"));
         request.destroy();
       }
@@ -155,6 +158,36 @@ function readRequestJson(request) {
 
     request.on("error", reject);
   });
+}
+
+function logoExtension(mimeType, fileName = "") {
+  const mimeExtensions = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+    "image/svg+xml": ".svg",
+  };
+  const ext = path.extname(String(fileName || "")).toLowerCase();
+
+  if (Object.values(mimeExtensions).includes(ext)) {
+    return ext;
+  }
+
+  return mimeExtensions[mimeType] || null;
+}
+
+function decodeDataUrl(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:([^;,]+);base64,(.+)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    mimeType: match[1].toLowerCase(),
+    data: Buffer.from(match[2], "base64"),
+  };
 }
 
 function sendFile(response, requestPath) {
@@ -381,6 +414,34 @@ async function handleApiRequest(request, response, pathname) {
       sendJson(response, 200, { ok: true });
     } catch {
       sendJson(response, 400, { error: "Invalid goal preview JSON" });
+    }
+    return true;
+  }
+
+  if (pathname === "/api/team-logo-upload" && request.method === "POST") {
+    try {
+      const body = await readRequestJson(request);
+      const decoded = decodeDataUrl(body.dataUrl);
+
+      if (!decoded || decoded.data.length > 5_000_000) {
+        sendJson(response, 400, { error: "Logo must be a base64 image under 5 MB" });
+        return true;
+      }
+
+      const ext = logoExtension(decoded.mimeType, body.fileName);
+
+      if (!ext) {
+        sendJson(response, 400, { error: "Logo must be PNG, JPG, WebP, GIF, or SVG" });
+        return true;
+      }
+
+      fs.mkdirSync(logoUploadDir, { recursive: true });
+      const fileName = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`;
+      const filePath = path.join(logoUploadDir, fileName);
+      fs.writeFileSync(filePath, decoded.data);
+      sendJson(response, 200, { url: `./assets/uploads/team-logos/${fileName}` });
+    } catch {
+      sendJson(response, 400, { error: "Invalid logo upload" });
     }
     return true;
   }

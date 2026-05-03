@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RLBS Producer Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./producer-mockup.css" />
+  </head>
+  <body>
+    <main class="app-shell" aria-label="Rocket League Broadcast Studio mockup">
+      <section class="studio">
+        <header class="topbar">
+          <div class="brand">
+            <div class="brand-mark">RLBS</div>
+            <div>
+              <strong>Rocket League</strong>
+              <span>Broadcast Studio</span>
+            </div>
+          </div>
+
+          <div class="project-title">
+            <strong>Rocket League Live</strong>
+            <span>Layout: Main Broadcast</span>
+          </div>
+
+          <div class="topbar-actions">
+            <button type="button">▣ Save Layout</button>
+            <button type="button">⇪ Export ▾</button>
+            <button class="primary-action" type="button">Open OBS Output</button>
+            <button class="icon-button" type="button">⚙</button>
+            <button class="icon-button" type="button">−</button>
+            <button class="icon-button" type="button">×</button>
+          </div>
+        </header>
+
+        <aside class="left-rail">
+          <article class="control-card">
+            <div class="card-title"><span>▣ Match Setup</span><button type="button">×</button></div>
+            <label>Match <select><option>RLCS Season X - Playoffs</option></select></label>
+            <label class="inline-toggle">Hide / Show <span class="toggle"></span></label>
+            <label>Best of <select><option>Best of 5</option></select></label>
+            <label>Game <select><option>Game 2</option></select></label>
+          </article>
+
+          <article class="control-card">
+            <div class="card-title"><span>▣ Teams & Branding</span><button type="button">×</button></div>
+            <div class="team-row blue-dot">Blue Team</div>
+            <label>Team Name <input value="BlueWave" /></label>
+            <label>Short <input value="BLW" /></label>
+            <div class="team-row orange-dot">Orange Team</div>
+            <label>Team Name <input value="Orange Esports" /></label>
+            <label>Short <input value="ORG" /></label>
+            <div class="logo-row">
+              <span>Use Custom Logos</span>
+              <span class="toggle on"></span>
+              <button type="button">Manage Logos</button>
+            </div>
+          </article>
+
+          <article class="control-card">
+            <div class="card-title"><span>▣ Layout Presets</span><button type="button">×</button></div>
+            <div class="preset-grid">
+              <button class="preset active" type="button">Main Broadcast</button>
+              <button class="preset" type="button">Minimal</button>
+              <button class="preset" type="button">2v2 Focus</button>
+              <button class="preset" type="button">Caster Desk</button>
+            </div>
+            <button class="ghost-button" type="button">Manage Presets</button>
+          </article>
+
+          <article class="control-card modules-card">
+            <div class="card-title"><span>▣ Overlay Modules</span><button type="button">×</button></div>
+            <ul>
+              <li><span>✦ Scoreboard</span><strong>ON</strong><em>◉</em></li>
+              <li><span>✦ Team Rosters</span><strong>ON</strong><em>◉</em></li>
+              <li><span>✦ Detailed Rosters</span><strong>ON</strong><em>◉</em></li>
+              <li><span>✦ Focused Player</span><strong>ON</strong><em>◉</em></li>
+              <li><span>✦ Team Totals</span><strong>ON</strong><em>◉</em></li>
+              <li><span>✦ Stats (Ball Speed)</span><strong>ON</strong><em>◉</em></li>
+            </ul>
+            <button class="ghost-button" type="button">Add Module ＋</button>
+          </article>
+
+          <article class="control-card">
+            <div class="card-title"><span>▣ Output Controls</span><button type="button">×</button></div>
+            <label>Resolution <select><option>1920 x 1080 (16:9)</option></select></label>
+            <label>Frame Rate <select><option>60 FPS</option></select></label>
+            <button class="gradient-button" type="button">Refresh Output</button>
+          </article>
+        </aside>
+
+        <section class="workspace">
+          <div class="tool-strip">
+            <div class="tool-group">
+              <button class="selected" type="button">⌁ Select</button>
+              <button type="button">✥ Move</button>
+              <button type="button">▢ Scale</button>
+              <button type="button">T Text</button>
+              <button type="button">▧ Image</button>
+              <button type="button">╱ Line</button>
+            </div>
+            <div class="tool-group">
+              <span>Snap</span><span class="toggle on"></span>
+              <span>Grid</span><span class="toggle on"></span>
+              <button type="button">⌕ 100%⌄</button>
+              <button type="button">⛶</button>
+            </div>
+          </div>
+
+          <div class="canvas">
+            <div class="grid-glow"></div>
+
+            <section class="scorebug selected-module">
+              <div class="team-logo blue-shield">G</div>
+              <div class="team-name blue-text">BlueWave</div>
+              <div class="score blue-score">2</div>
+              <div class="clock">3:24</div>
+              <div class="score orange-score">1</div>
+              <div class="team-name orange-text">Orange Esports</div>
+              <div class="team-logo orange-shield">E</div>
+              <div class="scorebug-label">Scoreboard</div>
+              <div class="series blue-series"><i></i><i></i><i></i></div>
+              <div class="game-label">Game 2 | Best of 5</div>
+              <div class="series orange-series"><i></i><i></i><i></i></div>
+            </section>
+
+            <section class="roster blue-roster">
+              <h3>Blue Roster</h3>
+              <p><span>BLW Alpha</span><strong>100</strong></p>
+              <p><span>BLW Beta</span><strong>100</strong></p>
+              <p><span>BLW Charlie</span><strong>100</strong></p>
+            </section>
+
+            <section class="roster orange-roster">
+              <h3>Orange Roster</h3>
+              <p><span>ORG Zen</span><strong>100</strong></p>
+              <p><span>ORG Rizzo</span><strong>100</strong></p>
+              <p><span>ORG Flux</span><strong>100</strong></p>
+            </section>
+
+            <section class="detailed-card blue-detail">
+              <h3>Blue Detailed Roster</h3>
+              <div class="stat-row"><span>BLW Alpha</span><b>412</b><b>1</b><b>0</b><b>2</b><b>3</b><em>+24</em></div>
+              <div class="stat-row"><span>BLW Beta</span><b>366</b><b>0</b><b>1</b><b>3</b><b>2</b><em>+28</em></div>
+              <div class="stat-row"><span>BLW Charlie</span><b>274</b><b>0</b><b>1</b><b>1</b><b>4</b><em>+32</em></div>
+            </section>
+
+            <section class="detailed-card orange-detail">
+              <h3>Orange Detailed Roster</h3>
+              <div class="stat-row"><span>ORG Zen</span><b>398</b><b>1</b><b>0</b><b>3</b><b>2</b><em>+24</em></div>
+              <div class="stat-row"><span>ORG Rizzo</span><b>316</b><b>0</b><b>1</b><b>2</b><b>2</b><em>+28</em></div>
+              <div class="stat-row"><span>ORG Flux</span><b>228</b><b>0</b><b>0</b><b>1</b><b>1</b><em>+36</em></div>
+            </section>
+
+            <section class="team-totals">
+              <h3>Team Totals</h3>
+              <div><strong>7</strong><span>Shots</span></div>
+              <div><strong>4</strong><span>Saves</span></div>
+              <div><strong>2</strong><span>Demos</span></div>
+              <div class="divider"></div>
+              <div><strong>7</strong><span>Shots</span></div>
+              <div><strong>4</strong><span>Saves</span></div>
+              <div><strong>2</strong><span>Demos</span></div>
+            </section>
+
+            <section class="focused-player">
+              <div class="avatar-star">★</div>
+              <div class="focus-main">
+                <h3>Focused Player</h3>
+                <strong>BLW Alpha</strong>
+                <span>BlueWave</span>
+              </div>
+              <div><small>Score</small><b>412</b></div>
+              <div><small>Goals</small><b>1</b></div>
+              <div><small>Assists</small><b>0</b></div>
+              <div><small>Saves</small><b>2</b></div>
+              <div><small>Shots</small><b>3</b></div>
+            </section>
+
+            <section class="ball-speed">
+              <div class="gauge">⌁</div>
+              <strong>78</strong>
+              <span>MPH</span>
+            </section>
+          </div>
+
+          <footer class="statusbar">
+            <span>Status: Connected <i></i></span>
+            <span><kbd>Ctrl + Drag</kbd> Move</span>
+            <span><kbd>Shift + Drag</kbd> Resize</span>
+            <span>▣ Duplicate</span>
+            <span>Del Delete</span>
+            <span>Align ▦ ▿</span>
+            <span>Distribute ▾</span>
+            <span>⇅ Send Backward</span>
+            <span>⇧ Bring Forward</span>
+          </footer>
+        </section>
+
+        <aside class="inspector">
+          <article class="live-preview">
+            <header><strong>Live Preview</strong><span><i></i> Live</span></header>
+            <div class="preview-frame">
+              <img src="./assets/rlbcs-in-game.png" alt="" />
+            </div>
+          </article>
+
+          <article class="properties-card">
+            <div class="tabs"><button class="active">Properties</button><button>Layers</button><button>Animations</button></div>
+            <div class="selected-header"><span>Selected Module</span><strong>Scoreboard</strong><em>Enabled <i></i></em></div>
+            <h3>General</h3>
+            <div class="field-grid">
+              <label>Position <span>X 960</span><span>Y 40</span></label>
+              <label>Size <span>W 800</span><span>H 120</span></label>
+            </div>
+            <div class="anchor-pad"><i></i><i></i><i></i><i></i><i class="active"></i><i></i><i></i><i></i><i></i></div>
+            <label class="z-field">Z-Index <input value="10" /></label>
+            <h3>Appearance</h3>
+            <label class="color-field">Team 1 Color <span class="swatch electric"></span><input value="#0062FF" /></label>
+            <label class="color-field">Team 2 Color <span class="swatch orange"></span><input value="#FF8A00" /></label>
+            <label class="color-field">Background <span class="swatch dark"></span><input value="#0A0E16CC" /></label>
+            <button class="advanced" type="button">Advanced Settings</button>
+          </article>
+        </aside>
+
+        <footer class="mockup-footer">
+          <span>Status: Connected</span><i></i>
+        </footer>
+      </section>
+
+      <aside class="style-legend">
+        <h2>Style Legend</h2>
+
+        <article class="legend-card">
+          <h3><span>1</span> Typography</h3>
+          <div class="legend-grid">
+            <div>
+              <strong>Primary UI Typeface</strong>
+              <p>Modern geometric sans-serif, SemiBold</p>
+            </div>
+            <div class="sample primary">Rocket League Live</div>
+            <div>
+              <strong>Secondary UI Typeface</strong>
+              <p>Clean sans-serif, Regular</p>
+            </div>
+            <div class="sample secondary">Layout: Main Broadcast</div>
+            <div>
+              <strong>Display / Scoreboard Numbers</strong>
+              <p>Condensed techno sans-serif, Bold</p>
+            </div>
+            <div class="sample score-sample">2&nbsp;&nbsp;3:24&nbsp;&nbsp;1</div>
+            <div>
+              <strong>Section Labels</strong>
+              <p>All caps, Medium, increased letter spacing</p>
+            </div>
+            <div class="sample section-sample">Match Setup</div>
+            <div>
+              <strong>Button Labels</strong>
+              <p>SemiBold, sentence case or ALL CAPS</p>
+            </div>
+            <div class="sample"><button class="primary-action">Open OBS Output</button></div>
+          </div>
+        </article>
+
+        <article class="legend-card">
+          <h3><span>2</span> Type Styles</h3>
+          <div class="legend-grid">
+            <div><strong>Heading</strong><p>SemiBold · Sentence Case</p></div>
+            <div class="sample primary">Rocket League Live</div>
+            <div><strong>Subheading</strong><p>Regular · Sentence Case</p></div>
+            <div class="sample secondary">Layout: Main Broadcast</div>
+            <div><strong>Panel Label</strong><p>Medium · ALL CAPS · +80 Tracking</p></div>
+            <div class="sample section-sample">Match Setup</div>
+            <div><strong>Body Text</strong><p>Regular · Sentence Case</p></div>
+            <div class="sample secondary">Manage Logos</div>
+            <div><strong>Numeric Highlight</strong><p>Bold · Condensed · Glow</p></div>
+            <div class="sample numeric">78</div>
+            <div><strong>Button Text</strong><p>SemiBold · ALL CAPS</p></div>
+            <div class="sample"><button class="gradient-button">Refresh Output</button></div>
+            <div><strong>Accent Label</strong><p>Medium · ALL CAPS · Glow</p></div>
+            <div class="sample live-dot"><i></i> Live</div>
+          </div>
+        </article>
+
+        <article class="legend-card">
+          <h3><span>3</span> Color Palette</h3>
+          <div class="palette">
+            <div><i style="--c:#0a0e16"></i><b>#0A0E16</b><span>Deep Navy</span></div>
+            <div><i style="--c:#121824"></i><b>#121824</b><span>Panel BG</span></div>
+            <div><i style="--c:#1a2233"></i><b>#1A2233</b><span>Panel Hover</span></div>
+            <div><i style="--c:#0062ff"></i><b>#0062FF</b><span>Electric Blue</span></div>
+            <div><i style="--c:#26c1ff"></i><b>#26C1FF</b><span>Cyan Blue</span></div>
+            <div><i style="--c:#8a25ff"></i><b>#8A25FF</b><span>Neon Purple</span></div>
+            <div><i style="--c:#ff3985"></i><b>#FF3985</b><span>Magenta</span></div>
+            <div><i style="--c:#ff8a00"></i><b>#FF8A00</b><span>Vivid Orange</span></div>
+            <div><i style="--c:#ffffff"></i><b>#FFFFFF</b><span>White</span></div>
+            <div><i style="--c:#a3adc2"></i><b>#A3ADC2</b><span>Muted Gray</span></div>
+            <div><i style="--c:#22d362"></i><b>#22D362</b><span>Live Green</span></div>
+          </div>
+        </article>
+
+        <article class="legend-card">
+          <h3><span>4</span> UI Effects</h3>
+          <ul class="effects-list">
+            <li>Neon outer glow for key elements (blue, orange, purple).</li>
+            <li>Rounded dark panels with subtle transparency.</li>
+            <li>Subtle grid background for depth and alignment.</li>
+            <li>Thin luminous borders define panels and modules.</li>
+            <li>Soft gradient accents on buttons and active states.</li>
+            <li>High-contrast typography for maximum readability.</li>
+          </ul>
+        </article>
+      </aside>
+    </main>
+  </body>
+</html>

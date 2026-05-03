@@ -14,15 +14,16 @@ A local producer-controlled broadcast overlay for Rocket League streams. It read
 - RLCS-inspired scoreboard with team logos, names, scores, game clock, team-specific series markers, and optional title bar
 - Team logo upload or web image URL support for scoreboard logo slots, with stable rendering during live updates
 - Custom team primary/accent color overrides with color pickers plus hex or RGB input
+- Global Google font selection with per-module and per-scoreboard-element font overrides
 - Compact RLCS-style roster modules with player names, boost values, and boost bars
-- Separate detailed roster modules with per-player score, goals, saves, assists, and demos
-- Team Totals module for one selected team: goals, saves, assists, and demos
-- Focused Player lower-third module with producer-selected fallback
+- Separate detailed roster modules with selectable, draggable stat metrics
+- Team Totals module for one selected team with team logo, selectable metrics, and independent name/metric sizing
+- Focused Player lower-third module with producer-selected fallback and selectable, draggable stat metrics
 - Ball speed badge using last-touch team color
 - Custom kickoff countdown overlay calibrated to Rocket League's pre-kickoff `3`, `2`, `1`, `GO!` cadence
 - Automatic goal celebration screen with scorer name and animated module transitions
 - Module groups with group-level and individual visibility toggles
-- Output refresh command for OBS browser sources
+- Output refresh, goal preview, countdown preview, full reset, and OBS output launch controls
 - No npm dependencies
 
 ## Screenshots
@@ -123,7 +124,7 @@ Avoid scaling the browser source up in OBS if possible. Scaling a `1600x900` sou
 
 ## Producer Panel Guide
 
-The producer panel is split into a left control panel and a right preview canvas.
+The producer panel is split into a left match/module control panel, a central preview canvas, and a right selected-module editor. The preview canvas embeds the same output renderer used by OBS, so layout and style edits are shown against the real overlay output instead of a separate mock view.
 
 ### Match
 
@@ -131,9 +132,9 @@ Use the Match section for stream-level data:
 
 - `Show Focus` / `Hide Focus`: toggles the Focused Player module.
 - `Scoreboard Title`: optional title shown above the scoreboard. Leave this blank to hide the title in the output.
+- `Global Font`: chooses the default font family for the whole overlay. Individual modules and some scoreboard elements can override this.
 - `Blue Team` and `Orange Team`: override team names from the Stats API.
 - `Blue/Orange Logo URL`: paste an `https://` image URL or upload a PNG, JPG, WebP, GIF, or SVG logo from the producer panel. Uploaded logos are saved locally under `assets/uploads/` and referenced by the overlay state.
-- `Blue Name Size` and `Orange Name Size`: adjust the team-name font scale from `25` to `120` for the scoreboard and Team Totals modules. Long names also auto-fit before truncating.
 - `Use custom blue/orange colors`: override Rocket League's team colors with producer-selected primary and accent colors. Use the color picker, paste a hex code like `#168cff`, or enter an RGB value like `rgb(22, 140, 255)`.
 - `Series`: choose best of 3, 5, or 7.
 - `Blue Wins` and `Orange Wins`: controls the scoreboard series markers.
@@ -159,11 +160,14 @@ Hidden modules are removed from the preview canvas so unused modules do not clut
 
 The Team Totals row includes a `Blue/Orange` selector in the module list. This chooses which team the Team Totals module highlights.
 
+Most control groups can be collapsed with the chevron button in the section header. This keeps the producer panel usable once you have a lot of module-specific settings open.
+
 ### Preview Canvas
 
-The preview canvas represents a `1600x900` overlay stage.
+The preview canvas represents a `1600x900` overlay stage and mirrors the eventual OBS output.
 
 - Click a module box to select it.
+- Click the empty canvas background to deselect the active module.
 - Drag a selected module box to move it.
 - Drag the bottom-right corner handle to resize it.
 - Press the arrow keys to move the highlighted module one grid box at a time.
@@ -174,8 +178,6 @@ The preview canvas represents a `1600x900` overlay stage.
 - Click the floating `V` button to center the module vertically.
 - Compact and detailed roster modules include a floating `S` button to match the other roster of the same type.
 
-The same controls are summarized in the legend underneath the preview canvas. The floating `H`, `V`, and `S` buttons appear when a module is selected or hovered; when a module is near the top edge, those buttons appear underneath it so they remain clickable.
-
 Resize is intentionally single-module only.
 
 ### Selected
@@ -185,15 +187,31 @@ The Selected section shows numeric controls for the primary selected module:
 - `X` and `Y`: module position on the 1600x900 stage
 - `Width` and `Height`: module dimensions
 - `Team`: appears for Team Totals and controls which team is highlighted
+- `Font Family`: overrides the global font for the selected module when applicable
+- `Text Color`, `Accent Color`, and `Panel Opacity`: module-level appearance controls
 
 When multiple modules are selected, this panel still edits the most recently selected module.
+
+Scoreboard modules replace the generic text controls with a `Scoreboard Element` editor. Choose `Title`, `Team Names`, `Scores`, `Clock`, or `Series Label` to adjust that element's font family, size, and color. When `Team Names` is selected, separate `Blue Name Size` and `Orange Name Size` sliders appear; these affect only the scoreboard team names, not Team Totals.
+
+The `Scoreboard Layout` editor includes `Team Name Area`, which expands the team name plates outward from the clock and pushes the logo slots farther out.
+
+Team Totals modules include a `Team Totals Layout` editor:
+
+- `Team Name Panel`: changes the width of the logo/name area.
+- `Team Name Size`: changes the team name size for that Team Totals module only.
+- `Metric Size`: changes the stat label and number size for that Team Totals module only.
+
+Detailed Roster, Focused Player, and Team Totals modules include metric selectors. Check a metric to show it, uncheck it to hide it, and drag the handle on the left of each metric row to reorder the output.
 
 ### Actions
 
 - `Save Layout`: immediately saves the current overlay state.
-- `Refresh Output`: tells OBS/browser output pages to refresh.
-- `Reset`: restores the default layout.
+- `Reset Defaults`: restores the default layout and module settings.
+- `Preview Goal`: sends a sample goal celebration to open output pages.
+- `Preview Countdown`: sends the custom kickoff countdown animation to open output pages.
 - `Open OBS Output`: opens the transparent output page in a new tab.
+- `Refresh Output`: appears in the Output Controls section and tells OBS/browser output pages to refresh.
 
 Most producer changes auto-save after a short delay. Use `Save Layout` when you want to force a save immediately.
 
@@ -210,6 +228,16 @@ The game clock freezes during pre-kickoff countdown, goal replays, pauses, and m
 Team logos can come from either a web URL or a local upload. Local uploads are copied into `assets/uploads/`, which is ignored by git so each producer can keep their own local logo set. The overlay preserves unchanged logo image nodes during live redraws to avoid flicker in OBS.
 
 Custom team colors include a primary and accent color for each side. When enabled, those colors override Rocket League's reported team colors throughout the overlay.
+
+The selected-module editor can tune the scoreboard by element:
+
+- `Title`: optional top text above the scorebug.
+- `Team Names`: team name font, color, and separate blue/orange name sizes.
+- `Scores`: score tile number styling.
+- `Clock`: central game clock styling.
+- `Series Label`: `GAME X | BEST OF Y` styling.
+
+For best-of series markers, the scoreboard shows the number of wins needed per side: best of 3 shows two boxes per side, best of 5 shows three boxes per side, and best of 7 shows four boxes per side.
 
 ### Compact Rosters
 
@@ -232,6 +260,8 @@ Larger roster modules for stat-heavy moments. Each player card shows:
 - Assists
 - Demos
 
+Use the Detailed Roster metric selector in the selected-module editor to choose which stat columns appear and drag them into the order you want. The selection is shared by both detailed roster modules so blue and orange stay consistent.
+
 These are separate modules from Compact Rosters, so you can hide compact rosters and show detailed rosters only when needed.
 
 ### Team Totals
@@ -243,11 +273,13 @@ Highlights one selected team and shows:
 - Assists
 - Demos
 
-Use the inline Blue/Orange selector in the Modules list to choose the team.
+Use the inline Blue/Orange selector in the Modules list or the selected-module `Team` control to choose the team. The selected-module editor can also adjust the logo/name panel width, team name size, metric size, and visible metric order.
 
 ### Focused Player
 
 A lower-third style focused-player module. It prefers the currently spectated player when the Stats API provides that data, then falls back to the producer-selected player.
+
+Use the Focused Player metric selector to choose and reorder the stats shown in the lower third. The producer panel includes sample player data so the module remains editable before a live Rocket League feed is connected.
 
 ### Ball Speed
 
@@ -262,6 +294,8 @@ When a goal is detected, the normal overlay modules animate out, a large `GOAL` 
 When Rocket League reports its pre-kickoff countdown, the output page shows a custom full-screen `3`, `2`, `1` countdown over the broadcast feed. The timing is calibrated against Rocket League's own kickoff countdown cadence so the custom countdown lands with the in-game sequence instead of racing ahead.
 
 The countdown clears automatically when the round starts or when the match moves into replay, pause, or end states.
+
+Use `Preview Countdown` in the top toolbar to trigger the countdown animation without waiting for a live kickoff event.
 
 ## OBS Setup
 
@@ -317,7 +351,7 @@ That file is ignored by git so each producer can keep their own local layout. A 
 overlay-state.example.json
 ```
 
-To reset from the producer panel, click `Reset`.
+To reset from the producer panel, click `Reset Defaults`.
 
 ## Configuration
 

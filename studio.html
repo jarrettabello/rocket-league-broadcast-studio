@@ -4,143 +4,484 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rocket League Broadcast Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;500;600;700;800&family=Bebas+Neue&family=Exo+2:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;800&family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Roboto+Condensed:wght@400;500;600;700;800&family=Saira+Condensed:wght@400;500;600;700;800&family=Teko:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="./studio.css" />
   </head>
   <body>
-    <aside class="panel">
-      <header>
-        <p>Rocket League Broadcast</p>
-        <h1>Overlay Studio</h1>
+    <main class="producer-shell" aria-label="Rocket League Broadcast Studio producer panel">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-logo" src="./assets/rlbs_logo_transparent.png" alt="" aria-hidden="true" />
+          <div class="brand-copy">
+            <strong>Rocket League</strong>
+            <span>Broadcast Studio</span>
+          </div>
+        </div>
+
+        <nav class="topbar-actions" aria-label="Producer actions">
+          <button id="saveButton" class="utility-button" type="button">
+            <span class="button-icon" aria-hidden="true">S</span>
+            Save Layout
+          </button>
+          <button id="resetDefaultsButton" class="utility-button" type="button">
+            <span class="button-icon" aria-hidden="true">R</span>
+            Reset Defaults
+          </button>
+          <button id="previewGoalButton" class="utility-button" type="button">
+            <span class="button-icon" aria-hidden="true">G</span>
+            Preview Goal
+          </button>
+          <button id="previewCountdownButton" class="utility-button" type="button">
+            <span class="button-icon" aria-hidden="true">3</span>
+            Preview Countdown
+          </button>
+          <a class="primary-action" href="./output.html" target="_blank" rel="noreferrer">Open OBS Output</a>
+        </nav>
       </header>
 
-      <section>
-        <h2>Match</h2>
-        <button class="group-toggle" id="toggleFocusButton" type="button">Switch to Focus</button>
-        <button class="group-toggle" id="previewGoalButton" type="button">Preview Goal</button>
-        <label>Scoreboard Title <input id="matchTitle" type="text" placeholder="Fall Major | Swiss Stage | Round 2" /></label>
-        <label>Blue Team <input id="blueName" type="text" /></label>
-        <div class="team-logo-editor">
-          <label>Blue Logo URL <input id="blueLogoUrl" type="url" placeholder="https://example.com/blue-logo.png" /></label>
-          <div class="logo-actions">
-            <label class="file-picker-button">Upload Blue Logo <input id="blueLogoUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" /></label>
-            <button id="clearBlueLogoButton" type="button">Clear</button>
+      <aside class="left-rail" aria-label="Producer controls">
+        <section class="control-card">
+          <div class="card-title">
+            <span>Match Setup</span>
+            <button type="button" aria-label="Collapse Match Setup">x</button>
           </div>
-        </div>
-        <label>Orange Team <input id="orangeName" type="text" /></label>
-        <div class="team-logo-editor">
-          <label>Orange Logo URL <input id="orangeLogoUrl" type="url" placeholder="https://example.com/orange-logo.png" /></label>
-          <div class="logo-actions">
-            <label class="file-picker-button">Upload Orange Logo <input id="orangeLogoUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" /></label>
-            <button id="clearOrangeLogoButton" type="button">Clear</button>
+
+          <label>
+            <span>Series Title</span>
+            <input id="matchTitle" type="text" placeholder="Main Broadcast" />
+          </label>
+
+          <label>
+            <span>Global Font</span>
+            <select id="globalFontFamily">
+              <option value="">Default</option>
+              <option value="inter">Inter</option>
+              <option value="rajdhani">Rajdhani</option>
+              <option value="orbitron">Orbitron</option>
+              <option value="bebasNeue">Bebas Neue</option>
+              <option value="barlowCondensed">Barlow Condensed</option>
+              <option value="oswald">Oswald</option>
+              <option value="teko">Teko</option>
+              <option value="exo2">Exo 2</option>
+              <option value="sairaCondensed">Saira Condensed</option>
+              <option value="robotoCondensed">Roboto Condensed</option>
+              <option value="anton">Anton</option>
+              <option value="system">System UI</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Show Focus</span>
+            <button id="toggleFocusButton" class="toggle-button" type="button">Show Focus</button>
+          </label>
+
+          <label>
+            <span>Best of</span>
+            <select id="seriesLength">
+              <option value="3">Best of 3</option>
+              <option value="5">Best of 5</option>
+              <option value="7">Best of 7</option>
+            </select>
+          </label>
+
+          <details class="match-details">
+            <summary>Series Details</summary>
+            <div class="split compact-split">
+              <label>
+                <span>Blue Wins</span>
+                <input id="blueSeriesWins" type="number" min="0" max="4" />
+              </label>
+              <label>
+                <span>Orange Wins</span>
+                <input id="orangeSeriesWins" type="number" min="0" max="4" />
+              </label>
+            </div>
+
+            <label>
+              <span>Focused Player</span>
+              <select id="focusedPlayerId"></select>
+            </label>
+          </details>
+        </section>
+
+        <section class="control-card">
+          <div class="card-title">
+            <span>Teams & Branding</span>
+            <button type="button" aria-label="Collapse Teams & Branding">x</button>
           </div>
-        </div>
-        <div class="split">
-          <label>Blue Name Size <input id="blueTeamFontScale" type="number" min="25" max="120" step="5" /></label>
-          <label>Orange Name Size <input id="orangeTeamFontScale" type="number" min="25" max="120" step="5" /></label>
-        </div>
-        <div class="team-color-editor">
-          <label class="toggle-setting"><input id="blueUseCustomColors" type="checkbox" /> Use custom blue colors</label>
-          <div class="split color-split">
-            <label>Blue Primary
-              <span class="color-control">
-                <input id="bluePrimaryColorPicker" type="color" />
-                <input id="bluePrimaryColor" type="text" placeholder="#168cff or rgb(22, 140, 255)" />
-              </span>
+
+          <article class="team-editor team-editor-blue">
+            <div class="team-heading">
+              <span class="team-chip" aria-hidden="true"></span>
+              <strong>Blue Team</strong>
+              <label class="color-switch">
+                <input id="blueUseCustomColors" type="checkbox" />
+                <span>Custom</span>
+              </label>
+            </div>
+            <label>
+              <span>Team Name</span>
+              <input id="blueName" type="text" />
             </label>
-            <label>Blue Accent
-              <span class="color-control">
-                <input id="blueSecondaryColorPicker" type="color" />
-                <input id="blueSecondaryColor" type="text" placeholder="#dff1ff or rgb(223, 241, 255)" />
-              </span>
+          </article>
+
+          <article class="team-editor team-editor-orange">
+            <div class="team-heading">
+              <span class="team-chip" aria-hidden="true"></span>
+              <strong>Orange Team</strong>
+              <label class="color-switch">
+                <input id="orangeUseCustomColors" type="checkbox" />
+                <span>Custom</span>
+              </label>
+            </div>
+            <label>
+              <span>Team Name</span>
+              <input id="orangeName" type="text" />
             </label>
+          </article>
+
+          <details class="branding-details">
+            <summary>Manage Logos & Colors</summary>
+            <div class="branding-detail-grid">
+              <label>
+                <span>Blue Logo URL</span>
+                <input id="blueLogoUrl" type="url" placeholder="https://example.com/blue-logo.png" />
+              </label>
+              <div class="logo-actions">
+                <label class="file-picker-button">
+                  Upload Blue
+                  <input id="blueLogoUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
+                </label>
+                <button id="clearBlueLogoButton" type="button">Clear</button>
+              </div>
+              <div class="split color-split">
+                <label>
+                  <span>Blue Primary</span>
+                  <span class="color-control">
+                    <input id="bluePrimaryColorPicker" type="color" />
+                    <input id="bluePrimaryColor" type="text" placeholder="#0062ff" />
+                  </span>
+                </label>
+                <label>
+                  <span>Blue Accent</span>
+                  <span class="color-control">
+                    <input id="blueSecondaryColorPicker" type="color" />
+                    <input id="blueSecondaryColor" type="text" placeholder="#26c1ff" />
+                  </span>
+                </label>
+              </div>
+
+              <label>
+                <span>Orange Logo URL</span>
+                <input id="orangeLogoUrl" type="url" placeholder="https://example.com/orange-logo.png" />
+              </label>
+              <div class="logo-actions">
+                <label class="file-picker-button">
+                  Upload Orange
+                  <input id="orangeLogoUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
+                </label>
+                <button id="clearOrangeLogoButton" type="button">Clear</button>
+              </div>
+              <div class="split color-split">
+                <label>
+                  <span>Orange Primary</span>
+                  <span class="color-control">
+                    <input id="orangePrimaryColorPicker" type="color" />
+                    <input id="orangePrimaryColor" type="text" placeholder="#ff8a00" />
+                  </span>
+                </label>
+                <label>
+                  <span>Orange Accent</span>
+                  <span class="color-control">
+                    <input id="orangeSecondaryColorPicker" type="color" />
+                    <input id="orangeSecondaryColor" type="text" placeholder="#fff0df" />
+                  </span>
+                </label>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section class="control-card modules-card">
+          <div class="card-title">
+            <span>Overlay Modules</span>
+            <button type="button" aria-label="Collapse Overlay Modules">x</button>
           </div>
-        </div>
-        <div class="team-color-editor">
-          <label class="toggle-setting"><input id="orangeUseCustomColors" type="checkbox" /> Use custom orange colors</label>
-          <div class="split color-split">
-            <label>Orange Primary
-              <span class="color-control">
-                <input id="orangePrimaryColorPicker" type="color" />
-                <input id="orangePrimaryColor" type="text" placeholder="#ff8f1f or rgb(255, 143, 31)" />
-              </span>
-            </label>
-            <label>Orange Accent
-              <span class="color-control">
-                <input id="orangeSecondaryColorPicker" type="color" />
-                <input id="orangeSecondaryColor" type="text" placeholder="#fff0df or rgb(255, 240, 223)" />
-              </span>
-            </label>
+          <div class="module-list" id="moduleList"></div>
+          <button class="ghost-button add-module" type="button">Add Module +</button>
+        </section>
+
+        <section class="control-card">
+          <div class="card-title">
+            <span>Output Controls</span>
+            <button type="button" aria-label="Collapse Output Controls">x</button>
           </div>
-        </div>
-        <label>Series
-          <select id="seriesLength">
-            <option value="3">Best of 3</option>
-            <option value="5">Best of 5</option>
-            <option value="7">Best of 7</option>
-          </select>
-        </label>
-        <div class="split">
-          <label>Blue Wins <input id="blueSeriesWins" type="number" min="0" max="4" /></label>
-          <label>Orange Wins <input id="orangeSeriesWins" type="number" min="0" max="4" /></label>
-        </div>
-        <label>Focused Player
-          <select id="focusedPlayerId"></select>
-        </label>
+          <button id="refreshButton" class="gradient-button" type="button">Refresh Output</button>
+        </section>
+      </aside>
+
+      <section class="editor" aria-label="Overlay editor">
+        <section class="canvas-wrap">
+          <div class="canvas-stage" aria-label="Live OBS output preview">
+            <iframe
+              id="outputPreview"
+              title="OBS output preview"
+              src="./output.html?previewBackground=1"
+              aria-hidden="true"
+            ></iframe>
+            <div class="canvas" id="canvas" aria-label="1600 by 900 overlay edit layer"></div>
+          </div>
+        </section>
+
+        <footer class="statusbar">
+          <span>Status: Connected <i aria-hidden="true"></i></span>
+          <span><kbd>Ctrl + Drag</kbd> Move</span>
+          <span><kbd>Shift + Click</kbd> Multi-select</span>
+          <span><kbd>Arrow Keys</kbd> Nudge</span>
+          <span><kbd>H</kbd> Center X</span>
+          <span><kbd>V</kbd> Center Y</span>
+          <span><kbd>S</kbd> Sync Rosters</span>
+        </footer>
       </section>
 
-      <section>
-        <h2>Modules</h2>
-        <div class="module-list" id="moduleList"></div>
-      </section>
+      <aside class="inspector" aria-label="Module properties">
+        <section class="properties-card">
+          <div class="tabs" role="tablist" aria-label="Inspector tabs">
+            <button class="active" type="button">Properties</button>
+            <button type="button">Layers</button>
+            <button type="button">Animations</button>
+          </div>
 
-      <section>
-        <h2>Selected</h2>
-        <p class="hint" id="selectedHint">Select a module on the canvas.</p>
-        <div class="selected-form" id="selectedForm" hidden>
-          <div class="split">
-            <label>X <input id="moduleX" type="number" /></label>
-            <label>Y <input id="moduleY" type="number" /></label>
+          <div class="selected-summary">
+            <span>Selected Module</span>
+            <strong id="selectedModuleName">None</strong>
+            <p class="hint" id="selectedHint">Select a module on the canvas.</p>
           </div>
-          <div class="split">
-            <label>Width <input id="moduleW" type="number" /></label>
-            <label>Height <input id="moduleH" type="number" /></label>
-          </div>
-          <div id="moduleTeamSetting" hidden>
-            <label>Team
-              <select id="moduleTeam">
-                <option value="0">Blue</option>
-                <option value="1">Orange</option>
+
+          <div class="selected-form" id="selectedForm" hidden>
+            <h3>General</h3>
+            <div class="field-grid">
+              <label>
+                <span>Position</span>
+                <input id="moduleX" type="number" aria-label="Module X position" />
+                <input id="moduleY" type="number" aria-label="Module Y position" />
+              </label>
+              <label>
+                <span>Size</span>
+                <input id="moduleW" type="number" aria-label="Module width" />
+                <input id="moduleH" type="number" aria-label="Module height" />
+              </label>
+            </div>
+
+            <div id="moduleTeamSetting" hidden>
+              <label>
+                <span>Team</span>
+                <select id="moduleTeam">
+                  <option value="0">Blue</option>
+                  <option value="1">Orange</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="z-field">
+              <span>Z-Index</span>
+              <input value="10" readonly />
+            </label>
+
+            <h3>Appearance</h3>
+            <label>
+              <span>Font Family</span>
+              <select id="moduleFontFamily">
+                <option value="">Default</option>
+                <option value="inter">Inter</option>
+                <option value="rajdhani">Rajdhani</option>
+                <option value="orbitron">Orbitron</option>
+                <option value="bebasNeue">Bebas Neue</option>
+                <option value="barlowCondensed">Barlow Condensed</option>
+                <option value="oswald">Oswald</option>
+                <option value="teko">Teko</option>
+                <option value="exo2">Exo 2</option>
+                <option value="sairaCondensed">Saira Condensed</option>
+                <option value="robotoCondensed">Roboto Condensed</option>
+                <option value="anton">Anton</option>
+                <option value="system">System UI</option>
               </select>
             </label>
+            <label id="moduleFontScaleField">
+              <span>Font Scale</span>
+              <input id="moduleFontScale" type="range" min="60" max="160" step="5" />
+            </label>
+            <div id="moduleFontScaleValueRow" class="inspector-value-row">
+              <span>Current Scale</span>
+              <strong id="moduleFontScaleValue">100%</strong>
+            </div>
+            <label id="moduleTextColorField">
+              <span>Text Color</span>
+              <span class="color-control">
+                <input id="moduleTextColorPicker" type="color" />
+                <input id="moduleTextColor" type="text" placeholder="Default" />
+              </span>
+            </label>
+            <label id="moduleAccentColorField">
+              <span>Accent Color</span>
+              <span class="color-control">
+                <input id="moduleAccentColorPicker" type="color" />
+                <input id="moduleAccentColor" type="text" placeholder="Default" />
+              </span>
+            </label>
+            <label>
+              <span>Panel Opacity</span>
+              <input id="moduleBackgroundOpacity" type="range" min="30" max="100" step="5" />
+            </label>
+            <div class="inspector-value-row">
+              <span>Current Opacity</span>
+              <strong id="moduleBackgroundOpacityValue">100%</strong>
+            </div>
+            <div id="scoreboardElementPanel" class="submodule-panel" hidden>
+              <h3>Scoreboard Element</h3>
+              <label>
+                <span>Element</span>
+                <select id="scoreboardElementTarget">
+                  <option value="title">Title</option>
+                  <option value="teamNames">Team Names</option>
+                  <option value="scores">Scores</option>
+                  <option value="clock">Clock</option>
+                  <option value="series">Series Label</option>
+                </select>
+              </label>
+              <label>
+                <span>Font Family</span>
+                <select id="scoreboardElementFontFamily">
+                  <option value="">Default</option>
+                  <option value="inter">Inter</option>
+                  <option value="rajdhani">Rajdhani</option>
+                  <option value="orbitron">Orbitron</option>
+                  <option value="bebasNeue">Bebas Neue</option>
+                  <option value="barlowCondensed">Barlow Condensed</option>
+                  <option value="oswald">Oswald</option>
+                  <option value="teko">Teko</option>
+                  <option value="exo2">Exo 2</option>
+                  <option value="sairaCondensed">Saira Condensed</option>
+                  <option value="robotoCondensed">Roboto Condensed</option>
+                  <option value="anton">Anton</option>
+                  <option value="system">System UI</option>
+                </select>
+              </label>
+              <label>
+                <span>Size</span>
+                <input id="scoreboardElementScale" type="range" min="60" max="180" step="5" />
+              </label>
+              <div class="inspector-value-row">
+                <span>Element Scale</span>
+                <strong id="scoreboardElementScaleValue">100%</strong>
+              </div>
+              <div id="scoreboardTeamNameScalePanel" class="submodule-panel nested-panel" hidden>
+                <h3>Team Name Sizes</h3>
+                <label>
+                  <span>Blue Name Size</span>
+                  <input id="blueTeamFontScale" type="range" min="25" max="120" step="5" />
+                </label>
+                <div class="inspector-value-row">
+                  <span>Blue Scale</span>
+                  <strong id="blueTeamFontScaleValue">100%</strong>
+                </div>
+                <label>
+                  <span>Orange Name Size</span>
+                  <input id="orangeTeamFontScale" type="range" min="25" max="120" step="5" />
+                </label>
+                <div class="inspector-value-row">
+                  <span>Orange Scale</span>
+                  <strong id="orangeTeamFontScaleValue">100%</strong>
+                </div>
+              </div>
+              <label>
+                <span>Color</span>
+                <span class="color-control">
+                  <input id="scoreboardElementColorPicker" type="color" />
+                  <input id="scoreboardElementColor" type="text" placeholder="Default" />
+                </span>
+              </label>
+              <button id="resetScoreboardElementStyleButton" class="ghost-button" type="button">
+                Reset Element Style
+              </button>
+            </div>
+            <div id="scoreboardLayoutPanel" class="submodule-panel" hidden>
+              <h3>Scoreboard Layout</h3>
+              <label>
+                <span>Team Name Area</span>
+                <input id="scoreboardTeamNameArea" type="range" min="18" max="30" step="1" />
+              </label>
+              <div class="inspector-value-row">
+                <span>Per Side</span>
+                <strong id="scoreboardTeamNameAreaValue">24%</strong>
+              </div>
+              <button id="resetScoreboardLayoutButton" class="ghost-button" type="button">
+                Reset Scoreboard Layout
+              </button>
+            </div>
+            <div id="teamTotalsLayoutPanel" class="submodule-panel" hidden>
+              <h3>Team Totals Layout</h3>
+              <label>
+                <span>Team Name Panel</span>
+                <input id="teamTotalsNameArea" type="range" min="24" max="56" step="1" />
+              </label>
+              <div class="inspector-value-row">
+                <span>Name Panel Width</span>
+                <strong id="teamTotalsNameAreaValue">32%</strong>
+              </div>
+              <label>
+                <span>Team Name Size</span>
+                <input id="teamTotalsNameScale" type="range" min="60" max="180" step="5" />
+              </label>
+              <div class="inspector-value-row">
+                <span>Name Scale</span>
+                <strong id="teamTotalsNameScaleValue">100%</strong>
+              </div>
+              <label>
+                <span>Metric Size</span>
+                <input id="teamTotalsMetricScale" type="range" min="60" max="180" step="5" />
+              </label>
+              <div class="inspector-value-row">
+                <span>Metric Scale</span>
+                <strong id="teamTotalsMetricScaleValue">100%</strong>
+              </div>
+              <button id="resetTeamTotalsLayoutButton" class="ghost-button" type="button">
+                Reset Team Totals Layout
+              </button>
+            </div>
+            <div id="teamTotalsMetricsPanel" class="submodule-panel" hidden>
+              <h3>Team Totals Metrics</h3>
+              <p class="panel-hint">Drag metrics to reorder the output.</p>
+              <div id="teamTotalsMetricChoices" class="checkbox-grid metric-choice-list"></div>
+              <button id="resetTeamTotalsMetricsButton" class="ghost-button" type="button">
+                Reset Metrics
+              </button>
+            </div>
+            <div id="detailedRosterMetricsPanel" class="submodule-panel" hidden>
+              <h3>Detailed Roster Metrics</h3>
+              <p class="panel-hint">Drag metrics to reorder the output.</p>
+              <div id="detailedRosterMetricChoices" class="checkbox-grid metric-choice-list"></div>
+              <button id="resetDetailedRosterMetricsButton" class="ghost-button" type="button">
+                Reset Metrics
+              </button>
+            </div>
+            <div id="focusedPlayerMetricsPanel" class="submodule-panel" hidden>
+              <h3>Focused Player Metrics</h3>
+              <p class="panel-hint">Drag metrics to reorder the output.</p>
+              <div id="focusedPlayerMetricChoices" class="checkbox-grid metric-choice-list"></div>
+              <button id="resetFocusedPlayerMetricsButton" class="ghost-button" type="button">
+                Reset Metrics
+              </button>
+            </div>
+            <button id="resetModuleAppearanceButton" class="advanced" type="button">Reset Module Style</button>
           </div>
-        </div>
-      </section>
-
-      <div class="actions">
-        <button id="saveButton" type="button">Save Layout</button>
-        <button id="refreshButton" type="button">Refresh Output</button>
-        <button id="resetButton" type="button">Reset</button>
-        <a href="./output.html" target="_blank">Open OBS Output</a>
-      </div>
-    </aside>
-
-    <main class="workspace">
-      <div class="toolbar">
-        <strong id="connectionStatus">Connecting</strong>
-        <span>Canvas: 1600 x 900</span>
-      </div>
-      <section class="canvas-wrap">
-        <div class="canvas" id="canvas"></div>
-        <div class="canvas-legend" aria-label="Preview controls">
-          <span><strong>Module box</strong> drag to move</span>
-          <span><strong>Corner handle</strong> drag to resize</span>
-          <span><strong>Shift + click</strong> add module to selection</span>
-          <span><strong>Arrow keys</strong> move selected modules one grid box</span>
-          <span><strong>H</strong> center horizontally</span>
-          <span><strong>V</strong> center vertically</span>
-          <span><strong>S</strong> match roster size</span>
-        </div>
-      </section>
+        </section>
+      </aside>
     </main>
 
     <script src="./studio.js"></script>

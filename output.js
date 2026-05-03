@@ -1,5 +1,33 @@
 const stage = document.querySelector("#stage");
 const scoreboardAspect = 1983 / 290;
+const defaultScoreboardTeamNameArea = 24;
+const defaultTeamTotalsNameArea = 32;
+const detailedRosterMetricOptions = {
+  score: { label: "Score", value: (player) => player.Score || 0 },
+  goals: { label: "Goals", value: (player) => player.Goals || 0 },
+  saves: { label: "Saves", value: (player) => player.Saves || 0 },
+  assists: { label: "Assists", value: (player) => player.Assists || 0 },
+  shots: { label: "Shots", value: (player) => player.Shots || 0 },
+  demos: { label: "Demos", value: (player) => player.Demos || 0 },
+  ping: { label: "Ping", value: (player) => `+${player.Ping || 0}` },
+};
+const defaultDetailedRosterMetrics = ["score", "goals", "saves", "assists", "demos"];
+const defaultFocusedPlayerMetrics = ["score", "goals", "shots", "assists", "saves"];
+const defaultTeamTotalsMetrics = ["goals", "saves", "assists", "demos"];
+const fontFamilies = {
+  inter: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  rajdhani: "Rajdhani, 'Arial Narrow', ui-sans-serif, sans-serif",
+  orbitron: "Orbitron, Rajdhani, ui-sans-serif, sans-serif",
+  bebasNeue: "'Bebas Neue', Rajdhani, ui-sans-serif, sans-serif",
+  barlowCondensed: "'Barlow Condensed', Rajdhani, ui-sans-serif, sans-serif",
+  oswald: "Oswald, Rajdhani, ui-sans-serif, sans-serif",
+  teko: "Teko, Rajdhani, ui-sans-serif, sans-serif",
+  exo2: "'Exo 2', Inter, ui-sans-serif, sans-serif",
+  sairaCondensed: "'Saira Condensed', Rajdhani, ui-sans-serif, sans-serif",
+  robotoCondensed: "'Roboto Condensed', Rajdhani, ui-sans-serif, sans-serif",
+  anton: "Anton, Impact, 'Arial Black', ui-sans-serif, sans-serif",
+  system: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+};
 const outputParams = new URLSearchParams(window.location.search);
 const previewBackgroundEnabled =
   outputParams.get("previewBackground") === "1" || outputParams.get("preview") === "background";
@@ -8,6 +36,14 @@ const kickoffCountdownDelayMs = 850;
 const kickoffCountdownStepMs = 1000;
 const kickoffCountdownGoMs = 720;
 const kickoffCountdownSteps = ["3", "2", "1"];
+const previewSamplePlayers = [
+  { TeamNum: 0, Name: "BLW Alpha", Boost: 100, Score: 412, Goals: 1, Assists: 0, Saves: 2, Shots: 3, Demos: 0, Ping: 24 },
+  { TeamNum: 0, Name: "BLW Beta", Boost: 100, Score: 366, Goals: 0, Assists: 1, Saves: 3, Shots: 2, Demos: 0, Ping: 28 },
+  { TeamNum: 0, Name: "BLW Charlie", Boost: 100, Score: 274, Goals: 0, Assists: 1, Saves: 4, Shots: 1, Demos: 1, Ping: 32 },
+  { TeamNum: 1, Name: "ORG Zen", Boost: 100, Score: 398, Goals: 1, Assists: 0, Saves: 2, Shots: 3, Demos: 0, Ping: 24 },
+  { TeamNum: 1, Name: "ORG Rizzo", Boost: 100, Score: 316, Goals: 0, Assists: 1, Saves: 2, Shots: 2, Demos: 0, Ping: 28 },
+  { TeamNum: 1, Name: "ORG Flux", Boost: 100, Score: 228, Goals: 0, Assists: 0, Saves: 1, Shots: 1, Demos: 1, Ping: 36 },
+];
 const state = {
   overlay: null,
   latest: null,
@@ -199,6 +235,18 @@ function teamLogo(team, side) {
   `;
 }
 
+function teamTotalLogo(team, side) {
+  if (!team.logoUrl) {
+    return "";
+  }
+
+  return `
+    <span class="total-logo total-logo-${side}" aria-hidden="true">
+      <img src="${escapeAttribute(team.logoUrl)}" alt="" data-preserve-image="team-total-logo-${side}" />
+    </span>
+  `;
+}
+
 function preserveStableImages(currentNode, nextNode) {
   nextNode.querySelectorAll("img[data-preserve-image]").forEach((nextImage) => {
     const key = nextImage.dataset.preserveImage;
@@ -218,8 +266,8 @@ function teamColorVars(blue, orange) {
     `--blue-secondary:${blue.secondary}`,
     `--orange-primary:${orange.primary}`,
     `--orange-secondary:${orange.secondary}`,
-    `--blue-team-name-scale:${teamNameScale(meta.blueTeamFontScale)}`,
-    `--orange-team-name-scale:${teamNameScale(meta.orangeTeamFontScale)}`,
+    `--blue-team-name-scale:${teamNameScale(meta.scoreboardBlueTeamFontScale || meta.blueTeamFontScale)}`,
+    `--orange-team-name-scale:${teamNameScale(meta.scoreboardOrangeTeamFontScale || meta.orangeTeamFontScale)}`,
   ].join(";");
 }
 
@@ -234,7 +282,14 @@ function teamNameScale(value) {
 }
 
 function playersForTeam(teamNum) {
-  return (state.latest?.Players || []).filter((player) => player.TeamNum === teamNum);
+  const players = state.latest?.Players || [];
+  const source = players.length || !previewBackgroundEnabled ? players : previewSamplePlayers;
+  return source.filter((player) => Number(player.TeamNum) === Number(teamNum));
+}
+
+function allPlayers() {
+  const players = state.latest?.Players || [];
+  return players.length || !previewBackgroundEnabled ? players : previewSamplePlayers;
 }
 
 function teamForPlayer(player) {
@@ -314,14 +369,40 @@ function playerTotals(players) {
   return players.reduce(
     (totals, player) => {
       return {
+        score: totals.score + (player.Score || 0),
         goals: totals.goals + (player.Goals || 0),
         saves: totals.saves + (player.Saves || 0),
         assists: totals.assists + (player.Assists || 0),
+        shots: totals.shots + (player.Shots || 0),
         demos: totals.demos + (player.Demos || 0),
       };
     },
-    { goals: 0, saves: 0, assists: 0, demos: 0 },
+    { score: 0, goals: 0, saves: 0, assists: 0, shots: 0, demos: 0 },
   );
+}
+
+function detailedRosterMetrics() {
+  const metrics = Array.isArray(state.overlay?.meta?.detailedRosterMetrics)
+    ? state.overlay.meta.detailedRosterMetrics.filter((metric) => detailedRosterMetricOptions[metric])
+    : [];
+
+  return metrics.length ? metrics : [...defaultDetailedRosterMetrics];
+}
+
+function focusedPlayerMetrics() {
+  const metrics = Array.isArray(state.overlay?.meta?.focusedPlayerMetrics)
+    ? state.overlay.meta.focusedPlayerMetrics.filter((metric) => detailedRosterMetricOptions[metric])
+    : [];
+
+  return metrics.length ? metrics : [...defaultFocusedPlayerMetrics];
+}
+
+function teamTotalsMetrics() {
+  const metrics = Array.isArray(state.overlay?.meta?.teamTotalsMetrics)
+    ? state.overlay.meta.teamTotalsMetrics.filter((metric) => metric !== "ping" && detailedRosterMetricOptions[metric])
+    : [];
+
+  return metrics.length ? metrics : [...defaultTeamTotalsMetrics];
 }
 
 function valueFromPath(source, path) {
@@ -391,7 +472,95 @@ function explicitGoalInfo(message) {
 
 function moduleStyle(module) {
   const height = module.type === "scoreboard" ? Math.round(module.w / scoreboardAspect) : module.h;
-  return `left:${module.x}px;top:${module.y}px;width:${module.w}px;height:${height}px;`;
+  return `left:${module.x}px;top:${module.y}px;width:${module.w}px;height:${height}px;${moduleAppearanceStyle(module)}`;
+}
+
+function moduleAppearanceStyle(module) {
+  const appearance = module.settings?.appearance || {};
+  const styles = [];
+  const fontFamily = fontFamilies[appearance.fontFamily];
+  const fontScale = Math.max(0.6, Math.min(1.6, Number(appearance.fontScale || 100) / 100));
+  const backgroundOpacity = Math.max(0.3, Math.min(1, Number(appearance.backgroundOpacity || 100) / 100));
+  const textColor = normalizeTeamColor(appearance.textColor, "");
+  const accentColor = normalizeTeamColor(appearance.accentColor, "");
+
+  if (fontFamily) {
+    styles.push(`--module-font-family:${fontFamily}`);
+  }
+
+  if (fontScale !== 1) {
+    styles.push(`--module-font-scale:${fontScale}`);
+  }
+
+  if (backgroundOpacity !== 1) {
+    styles.push(`--module-bg-alpha:${backgroundOpacity}`);
+  }
+
+  if (textColor) {
+    styles.push(`--module-text-color:${textColor}`);
+  }
+
+  if (accentColor) {
+    styles.push(`--module-accent-color:${accentColor}`);
+  }
+
+  if (module.type === "scoreboard") {
+    const layout = appearance.scoreboardLayout || {};
+    const teamNameArea = Math.max(
+      18,
+      Math.min(30, Number(layout.teamNameArea || defaultScoreboardTeamNameArea)),
+    );
+    const trackArea = 60 + teamNameArea * 2;
+    const nameColumnPx = (module.w * teamNameArea) / 100;
+    const logoColumnPx = (module.w * 11) / 100;
+    const scoreColumnPx = (module.w * 10) / 100;
+    const clockColumnPx = (module.w * 18) / 100;
+    const scoreboardElements = {
+      title: "scoreboard-title",
+      teamNames: "scoreboard-team-name",
+      scores: "scoreboard-score",
+      clock: "scoreboard-clock",
+      series: "scoreboard-series",
+    };
+
+    styles.push(`--scoreboard-name-column:${nameColumnPx.toFixed(2)}px`);
+    styles.push(`--scoreboard-logo-column:${logoColumnPx.toFixed(2)}px`);
+    styles.push(`--scoreboard-score-column:${scoreColumnPx.toFixed(2)}px`);
+    styles.push(`--scoreboard-clock-column:${clockColumnPx.toFixed(2)}px`);
+    styles.push(`--scoreboard-track-width:${trackArea.toFixed(2)}%`);
+
+    for (const [key, prefix] of Object.entries(scoreboardElements)) {
+      const element = appearance.scoreboardElements?.[key] || {};
+      const elementFontFamily = fontFamilies[element.fontFamily];
+      const elementScale = Math.max(0.6, Math.min(1.8, Number(element.scale || 100) / 100));
+      const elementColor = normalizeTeamColor(element.color, "");
+
+      if (elementFontFamily) {
+        styles.push(`--${prefix}-font-family:${elementFontFamily}`);
+      }
+
+      if (elementScale !== 1) {
+        styles.push(`--${prefix}-scale:${elementScale}`);
+      }
+
+      if (elementColor) {
+        styles.push(`--${prefix}-color:${elementColor}`);
+      }
+    }
+  }
+
+  if (module.type === "teamTotals") {
+    const layout = appearance.teamTotalsLayout || {};
+    const nameArea = Math.max(
+      24,
+      Math.min(56, Number(layout.nameArea || defaultTeamTotalsNameArea)),
+    );
+    styles.push(`--team-totals-name-area:${nameArea.toFixed(2)}%`);
+    styles.push(`--team-totals-name-scale:${Math.max(0.6, Math.min(1.8, Number(layout.nameScale || 100) / 100))}`);
+    styles.push(`--team-totals-metric-scale:${Math.max(0.6, Math.min(1.8, Number(layout.metricScale || 100) / 100))}`);
+  }
+
+  return styles.length ? `${styles.join(";")};` : "";
 }
 
 function moduleExitDirection(module) {
@@ -415,7 +584,7 @@ function scoreboard(module) {
   const blueWins = Number(meta.blueSeriesWins || 0);
   const orangeWins = Number(meta.orangeSeriesWins || 0);
   const seriesLength = Number(meta.seriesLength || 5);
-  const dotCount = Math.max(1, seriesLength);
+  const dotCount = Math.max(1, Math.ceil(seriesLength / 2));
   const dots = Array.from({ length: dotCount }, (_, index) => {
     const className = index < blueWins ? "blue-win" : index >= dotCount - orangeWins ? "orange-win" : "";
     return `<span class="${className}"></span>`;
@@ -533,13 +702,13 @@ function scoreboardV2(module) {
   const blueWins = Number(meta.blueSeriesWins || 0);
   const orangeWins = Number(meta.orangeSeriesWins || 0);
   const seriesLength = Number(meta.seriesLength || 5);
-  const dotCount = Math.max(1, seriesLength);
+  const dotCount = Math.max(1, Math.ceil(seriesLength / 2));
   const blueSeries = Array.from({ length: dotCount }, (_, index) => {
-    const className = index < blueWins ? "is-won" : "";
+    const className = index < Math.min(blueWins, dotCount) ? "is-won" : "";
     return `<span class="${className}"></span>`;
   }).join("");
   const orangeSeries = Array.from({ length: dotCount }, (_, index) => {
-    const className = index >= dotCount - orangeWins ? "is-won" : "";
+    const className = index >= dotCount - Math.min(orangeWins, dotCount) ? "is-won" : "";
     return `<span class="${className}"></span>`;
   }).join("");
 
@@ -566,7 +735,7 @@ function scoreboardV2(module) {
         ${teamLogo(orange, "orange")}
       </div>
       <div class="series-marker-bar series-marker-blue" aria-label="Blue series wins">${blueSeries}</div>
-      <div class="series-info">GAME ${Math.min(blueWins + orangeWins + 1, dotCount)} <span>|</span> BEST OF ${dotCount}</div>
+      <div class="series-info">GAME ${Math.min(blueWins + orangeWins + 1, seriesLength)} <span>|</span> BEST OF ${seriesLength}</div>
       <div class="series-marker-bar series-marker-orange" aria-label="Orange series wins">${orangeSeries}</div>
     </section>
   `;
@@ -604,13 +773,11 @@ function detailedPlayerCard(player) {
   const team = teamForPlayer(player);
   const boost = boostValue(player);
   const boostPercent = boost === null ? 0 : boost;
-  const stats = [
-    ["Score", player.Score || 0],
-    ["Goals", player.Goals || 0],
-    ["Saves", player.Saves || 0],
-    ["Assists", player.Assists || 0],
-    ["Demos", player.Demos || 0],
-  ];
+  const metricKeys = detailedRosterMetrics();
+  const stats = metricKeys.map((key) => {
+    const metric = detailedRosterMetricOptions[key];
+    return [metric.label, metric.value(player)];
+  });
 
   return `
     <article class="detailed-player-card" style="--team-primary:${team.primary};--team-secondary:${team.secondary};--boost:${boostPercent}%;">
@@ -619,7 +786,7 @@ function detailedPlayerCard(player) {
         <strong>${boost === null ? "--" : boost}</strong>
       </div>
       <div class="detailed-boost-track" aria-hidden="true"><span></span></div>
-      <div class="detailed-stat-grid">
+      <div class="detailed-stat-grid" style="--detailed-stat-count:${stats.length};">
         ${stats.map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join("")}
       </div>
     </article>
@@ -643,20 +810,19 @@ function teamTotals(module) {
   const team = module.settings?.team || 0;
   const teamInfo = team === 1 ? orange : blue;
   const teamClass = team === 1 ? "orange" : "blue";
-  const meta = state.overlay?.meta || {};
-  const teamScale = teamNameScale(team === 1 ? meta.orangeTeamFontScale : meta.blueTeamFontScale);
   const totals = playerTotals(playersForTeam(team));
-  const stats = [
-    ["Goals", totals.goals],
-    ["Saves", totals.saves],
-    ["Assists", totals.assists],
-    ["Demos", totals.demos],
-  ];
+  const stats = teamTotalsMetrics().map((key) => {
+    const metric = detailedRosterMetricOptions[key];
+    return [metric.label, totals[key]];
+  });
 
   return `
-    <section class="${moduleClass(module, `team-totals totals-${teamClass}`)}" data-module-id="${module.id}" style="${moduleStyle(module)}--team-primary:${teamInfo.primary};--team-secondary:${teamInfo.secondary};--team-name-scale:${teamScale};">
-      <div class="total-name" data-fit-team-name-container><span data-fit-team-name title="${teamInfo.name}">${teamInfo.name}</span></div>
-      <div class="total-stats">
+    <section class="${moduleClass(module, `team-totals totals-${teamClass}`)}" data-module-id="${module.id}" style="${moduleStyle(module)}--team-primary:${teamInfo.primary};--team-secondary:${teamInfo.secondary};">
+      <div class="total-name" data-fit-team-name-container>
+        ${teamTotalLogo(teamInfo, teamClass)}
+        <span data-fit-team-name title="${teamInfo.name}">${teamInfo.name}</span>
+      </div>
+      <div class="total-stats" style="--team-total-stat-count:${stats.length};">
         ${stats.map(([label, value]) => `<span><strong>${value}</strong>${label}</span>`).join("")}
       </div>
     </section>
@@ -664,7 +830,7 @@ function teamTotals(module) {
 }
 
 function focusedPlayer(module) {
-  const players = state.latest?.Players || [];
+  const players = allPlayers();
   const focusedId = state.overlay?.meta?.focusedPlayerId;
   const player = players.find(isObservedPlayer) || players.find((item) => playerKey(item) === focusedId) || players[0];
 
@@ -676,20 +842,17 @@ function focusedPlayer(module) {
   const teamClass = player.TeamNum === 1 ? "orange" : "blue";
   const boost = boostValue(player);
   const boostPercent = boost === null ? 0 : boost;
-  const stats = [
-    ["Score", player.Score || 0],
-    ["Goals", player.Goals || 0],
-    ["Shots", player.Shots || 0],
-    ["Assist", player.Assists || 0],
-    ["Saves", player.Saves || 0],
-  ];
+  const stats = focusedPlayerMetrics().map((key) => {
+    const metric = detailedRosterMetricOptions[key];
+    return [metric.label, metric.value(player)];
+  });
 
   return `
     <section class="${moduleClass(module, `focused-player focused-${teamClass}`)}" data-module-id="${module.id}" style="${moduleStyle(module)}--team-primary:${team.primary};--team-secondary:${team.secondary};--boost:${boostPercent}%;">
       <div class="focus-nameplate">
         <span>${player.Name || "Unknown"}</span>
       </div>
-      <div class="focus-stat-strip">
+      <div class="focus-stat-strip" style="--focus-stat-count:${stats.length};">
         ${stats.map(([label, value]) => `<div class="focus-stat"><strong>${value}</strong><span>${label}</span></div>`).join("")}
       </div>
       <div class="focus-boost">
@@ -933,6 +1096,7 @@ function render() {
     return;
   }
 
+  stage.style.fontFamily = fontFamilies[state.overlay.meta?.globalFontFamily] || "";
   const activeIds = new Set(state.overlay.modules.filter(shouldShowModule).map((module) => module.id));
 
   for (const module of state.overlay.modules) {
@@ -1122,6 +1286,10 @@ function connectOverlayState() {
 
     if (message?.type === "goalPreview") {
       showGoalCelebration(message.goal, { force: true });
+    }
+
+    if (message?.type === "countdownPreview") {
+      showKickoffCountdown();
     }
   });
   state.stateSocket.addEventListener("close", (event) => {

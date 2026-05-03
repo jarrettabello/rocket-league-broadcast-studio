@@ -4,6 +4,7 @@ RLBS - Shoutout SunlessKhan
 A local producer-controlled broadcast overlay for Rocket League streams. It reads the Rocket League Stats API, gives a producer a live control panel, and serves a transparent OBS output page.
 
 [Watch the demo on YouTube](https://www.youtube.com/watch?v=7hOhQyc2AQY)
+[Watch the new Producer Panel demo on YouTube](https://youtu.be/tZ_D9jxe5f8)
 
 ## Features
 
@@ -28,23 +29,7 @@ A local producer-controlled broadcast overlay for Rocket League streams. It read
 
 ## Screenshots
 
-### Producer View
-
-Use this page outside OBS to control the stream overlay.
-
-![Producer view](assets/rlbcs-producer-view.png)
-
-### In-Game View
-
-The live Rocket League view with the broadcast overlay in context.
-
-![In-game view](assets/rlbcs-in-game.png)
-
-### Overlay Output
-
-Use this transparent page as the OBS Browser Source.
-
-![Overlay output](assets/rlbcs-overlay.png)
+![Rocket League Broadcast Studio producer panel](assets/rlbs-producerpanel-updates.png)
 
 ## Requirements
 

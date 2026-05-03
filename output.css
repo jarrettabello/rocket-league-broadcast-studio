@@ -61,7 +61,12 @@ body[data-preview-background="true"] .output-viewport::before {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(10, 17, 27, 0.88), rgba(8, 13, 20, 0.68));
+  --module-font-scale: 1;
+  --module-bg-alpha: 1;
+  font-family: var(--module-font-family, inherit);
+  color: var(--module-text-color, inherit);
+  background:
+    linear-gradient(135deg, rgba(10, 17, 27, calc(0.88 * var(--module-bg-alpha))), rgba(8, 13, 20, calc(0.68 * var(--module-bg-alpha))));
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.42);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
 }
@@ -657,14 +662,14 @@ body[data-preview-background="true"] .output-viewport::before {
   display: grid;
   place-items: center;
   overflow: hidden;
-  color: #78bdff;
+  color: var(--module-accent-color, #78bdff);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 48%),
     rgba(2, 5, 9, 0.94);
   box-shadow:
     0 10px 18px rgba(0, 0, 0, 0.36),
     inset 0 -3px 0 rgba(120, 189, 255, 0.72);
-  font-size: clamp(10px, 1.55cqw, 18px);
+  font-size: clamp(10px, calc(1.55cqw * var(--module-font-scale, 1)), calc(18px * var(--module-font-scale, 1)));
   font-weight: 950;
   letter-spacing: 0;
   text-align: center;
@@ -705,7 +710,7 @@ body[data-preview-background="true"] .output-viewport::before {
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 46%),
-    rgba(2, 5, 9, 0.95);
+    rgba(2, 5, 9, calc(0.95 * var(--module-bg-alpha, 1)));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 10px 20px rgba(0, 0, 0, 0.44);
@@ -741,7 +746,7 @@ body[data-preview-background="true"] .output-viewport::before {
 .clock-pod-v2 {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 48%),
-    rgba(18, 10, 18, 0.9);
+    rgba(18, 10, 18, calc(0.9 * var(--module-bg-alpha, 1)));
 }
 
 .team-plate-v2 {
@@ -792,8 +797,8 @@ body[data-preview-background="true"] .output-viewport::before {
   width: 100%;
   max-width: 100%;
   overflow: hidden;
-  color: #f8fbff;
-  font-size: clamp(8px, calc(2.85cqw * var(--team-name-scale, 1)), calc(36px * var(--team-name-scale, 1)));
+  color: var(--module-text-color, #f8fbff);
+  font-size: clamp(8px, calc(2.85cqw * var(--team-name-scale, 1) * var(--module-font-scale, 1)), calc(36px * var(--team-name-scale, 1) * var(--module-font-scale, 1)));
   font-weight: 950;
   text-overflow: ellipsis;
   text-shadow:
@@ -848,8 +853,8 @@ body[data-preview-background="true"] .output-viewport::before {
 .score-tile-v2 span {
   position: relative;
   z-index: 1;
-  color: #ffffff;
-  font-size: clamp(32px, 6.1cqw, 70px);
+  color: var(--module-text-color, #ffffff);
+  font-size: clamp(32px, calc(6.1cqw * var(--module-font-scale, 1)), calc(70px * var(--module-font-scale, 1)));
   font-weight: 950;
   line-height: 0.95;
   text-shadow:
@@ -877,7 +882,8 @@ body[data-preview-background="true"] .output-viewport::before {
   position: static;
   width: auto;
   transform: none;
-  font-size: clamp(28px, 4.8cqw, 58px);
+  color: var(--module-text-color, #ffffff);
+  font-size: clamp(28px, calc(4.8cqw * var(--module-font-scale, 1)), calc(58px * var(--module-font-scale, 1)));
   line-height: 0.95;
 }
 
@@ -902,7 +908,7 @@ body[data-preview-background="true"] .output-viewport::before {
   grid-auto-columns: minmax(0, 1fr);
   gap: 3.2%;
   align-items: center;
-  background: rgba(2, 5, 9, 0.94);
+  background: rgba(2, 5, 9, calc(0.94 * var(--module-bg-alpha, 1)));
   box-shadow:
     0 8px 16px rgba(0, 0, 0, 0.32),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -950,14 +956,14 @@ body[data-preview-background="true"] .output-viewport::before {
   align-items: center;
   justify-content: center;
   gap: 4%;
-  color: #f8fbff;
+  color: var(--module-text-color, #f8fbff);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 50%),
-    rgba(2, 5, 9, 0.97);
+    rgba(2, 5, 9, calc(0.97 * var(--module-bg-alpha, 1)));
   box-shadow:
     0 9px 18px rgba(0, 0, 0, 0.36),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  font-size: clamp(10px, 1.6cqw, 18px);
+  font-size: clamp(10px, calc(1.6cqw * var(--module-font-scale, 1)), calc(18px * var(--module-font-scale, 1)));
   font-weight: 950;
   text-align: center;
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.72);
@@ -974,13 +980,13 @@ body[data-preview-background="true"] .output-viewport::before {
   min-width: 0;
   min-height: 0;
   padding: clamp(5px, 9cqh, 12px) clamp(8px, 7cqw, 14px);
-  border-left: clamp(3px, 2cqw, 6px) solid var(--ball-team-primary, #ffffff);
+  border-left: clamp(3px, 2cqw, 6px) solid var(--module-accent-color, var(--ball-team-primary, #ffffff));
   display: grid;
   align-items: center;
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 48%),
-    rgba(4, 7, 12, 0.86);
+    rgba(4, 7, 12, calc(0.86 * var(--module-bg-alpha, 1)));
 }
 
 .ball-speed > div {
@@ -990,8 +996,8 @@ body[data-preview-background="true"] .output-viewport::before {
 
 .speed-label {
   overflow: hidden;
-  color: var(--ball-team-primary, #ffffff);
-  font-size: clamp(8px, min(9cqw, 20cqh), 14px);
+  color: var(--module-accent-color, var(--ball-team-primary, #ffffff));
+  font-size: clamp(8px, calc(min(9cqw, 20cqh) * var(--module-font-scale, 1)), calc(14px * var(--module-font-scale, 1)));
   font-weight: 900;
   line-height: 1;
   text-overflow: ellipsis;
@@ -1002,7 +1008,8 @@ body[data-preview-background="true"] .output-viewport::before {
 .speed-value {
   overflow: hidden;
   margin-top: clamp(1px, 1cqh, 4px);
-  font-size: clamp(16px, min(29cqw, 48cqh), 42px);
+  color: var(--module-text-color, #ffffff);
+  font-size: clamp(16px, calc(min(29cqw, 48cqh) * var(--module-font-scale, 1)), calc(42px * var(--module-font-scale, 1)));
   font-weight: 950;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -1039,7 +1046,7 @@ body[data-preview-background="true"] .output-viewport::before {
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 42%),
-    rgba(4, 7, 12, 0.84);
+    rgba(4, 7, 12, calc(0.84 * var(--module-bg-alpha, 1)));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 8px 14px rgba(0, 0, 0, 0.34);
@@ -1063,8 +1070,8 @@ body[data-preview-background="true"] .output-viewport::before {
   z-index: 5;
   width: var(--boost);
   height: 3px;
-  background: var(--team-primary);
-  box-shadow: 0 0 10px var(--team-primary);
+  background: var(--module-accent-color, var(--team-primary));
+  box-shadow: 0 0 10px var(--module-accent-color, var(--team-primary));
   opacity: 0.92;
   transform-origin: left center;
 }
@@ -1104,10 +1111,10 @@ body[data-preview-background="true"] .output-viewport::before {
   z-index: 3;
   display: grid;
   place-items: center;
-  color: white;
-  background: rgba(2, 5, 9, 0.52);
+  color: var(--module-text-color, white);
+  background: rgba(2, 5, 9, calc(0.52 * var(--module-bg-alpha, 1)));
   border-left: 1px solid rgba(255, 255, 255, 0.14);
-  font-size: clamp(12px, 16cqh, 18px);
+  font-size: clamp(12px, calc(16cqh * var(--module-font-scale, 1)), calc(18px * var(--module-font-scale, 1)));
   font-weight: 950;
   font-variant-numeric: tabular-nums;
   text-shadow:
@@ -1128,9 +1135,9 @@ body[data-preview-background="true"] .output-viewport::before {
   padding: 0 12px 4px;
   display: grid;
   align-items: center;
-  color: #f8fbff;
+  color: var(--module-text-color, #f8fbff);
   overflow: hidden;
-  font-size: clamp(12px, 16cqh, 19px);
+  font-size: clamp(12px, calc(16cqh * var(--module-font-scale, 1)), calc(19px * var(--module-font-scale, 1)));
   font-weight: 950;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -1138,16 +1145,16 @@ body[data-preview-background="true"] .output-viewport::before {
 }
 
 .player-card.blue .player-name {
-  color: var(--team-secondary, #ffffff);
+  color: var(--module-text-color, var(--team-secondary, #ffffff));
 }
 
 .player-card.orange .player-name {
-  color: var(--team-secondary, #ffffff);
+  color: var(--module-text-color, var(--team-secondary, #ffffff));
   text-align: right;
 }
 
 .player-card.observed .player-name {
-  color: var(--team-primary);
+  color: var(--module-accent-color, var(--team-primary));
 }
 
 .detailed-roster {
@@ -1163,13 +1170,13 @@ body[data-preview-background="true"] .output-viewport::before {
 
 .detailed-player-card {
   min-height: 0;
-  border-left: 5px solid var(--team-primary);
+  border-left: 5px solid var(--module-accent-color, var(--team-primary));
   display: grid;
   grid-template-rows: minmax(0, 1fr) 4px minmax(32px, 36%);
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 44%),
-    rgba(4, 7, 12, 0.88);
+    rgba(4, 7, 12, calc(0.88 * var(--module-bg-alpha, 1)));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 8px 16px rgba(0, 0, 0, 0.34);
@@ -1186,8 +1193,8 @@ body[data-preview-background="true"] .output-viewport::before {
   min-width: 0;
   padding: 0 14px;
   overflow: hidden;
-  color: var(--team-secondary, #ffffff);
-  font-size: clamp(15px, min(4cqw, 21cqh), 24px);
+  color: var(--module-text-color, var(--team-secondary, #ffffff));
+  font-size: clamp(15px, calc(min(4cqw, 21cqh) * var(--module-font-scale, 1)), calc(24px * var(--module-font-scale, 1)));
   font-weight: 950;
   text-overflow: ellipsis;
   text-shadow:
@@ -1201,10 +1208,10 @@ body[data-preview-background="true"] .output-viewport::before {
   height: 100%;
   display: grid;
   place-items: center;
-  color: white;
-  background: rgba(2, 5, 9, 0.52);
+  color: var(--module-text-color, white);
+  background: rgba(2, 5, 9, calc(0.52 * var(--module-bg-alpha, 1)));
   border-left: 1px solid rgba(255, 255, 255, 0.14);
-  font-size: clamp(14px, min(3.2cqw, 22cqh), 22px);
+  font-size: clamp(14px, calc(min(3.2cqw, 22cqh) * var(--module-font-scale, 1)), calc(22px * var(--module-font-scale, 1)));
   font-variant-numeric: tabular-nums;
 }
 
@@ -1216,7 +1223,7 @@ body[data-preview-background="true"] .output-viewport::before {
   display: block;
   width: var(--boost);
   height: 100%;
-  background: var(--team-primary);
+  background: var(--module-accent-color, var(--team-primary));
 }
 
 .detailed-stat-grid {
@@ -1242,14 +1249,14 @@ body[data-preview-background="true"] .output-viewport::before {
 }
 
 .detailed-stat-grid strong {
-  color: white;
-  font-size: clamp(14px, min(3cqw, 21cqh), 22px);
+  color: var(--module-text-color, white);
+  font-size: clamp(14px, calc(min(3cqw, 21cqh) * var(--module-font-scale, 1)), calc(22px * var(--module-font-scale, 1)));
   font-variant-numeric: tabular-nums;
 }
 
 .detailed-stat-grid span {
   overflow: hidden;
-  font-size: clamp(8px, min(1.5cqw, 10cqh), 11px);
+  font-size: clamp(8px, calc(min(1.5cqw, 10cqh) * var(--module-font-scale, 1)), calc(11px * var(--module-font-scale, 1)));
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1294,10 +1301,10 @@ body[data-preview-background="true"] .output-viewport::before {
   padding: 0;
   overflow: hidden;
   border: 0;
-  border-left: 5px solid var(--team-primary);
+  border-left: 5px solid var(--module-accent-color, var(--team-primary));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 44%),
-    rgba(4, 7, 12, 0.86);
+    rgba(4, 7, 12, calc(0.86 * var(--module-bg-alpha, 1)));
 }
 
 .total-name {
@@ -1307,8 +1314,8 @@ body[data-preview-background="true"] .output-viewport::before {
   display: grid;
   align-items: center;
   overflow: hidden;
-  color: var(--team-secondary, #ffffff);
-  background: var(--team-primary);
+  color: var(--module-text-color, var(--team-secondary, #ffffff));
+  background: var(--module-accent-color, var(--team-primary));
 }
 
 .total-name span {
@@ -1316,7 +1323,7 @@ body[data-preview-background="true"] .output-viewport::before {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
-  font-size: clamp(8px, calc(min(4cqw, 38cqh) * var(--team-name-scale, 1)), calc(28px * var(--team-name-scale, 1)));
+  font-size: clamp(8px, calc(min(4cqw, 38cqh) * var(--team-name-scale, 1) * var(--module-font-scale, 1)), calc(28px * var(--team-name-scale, 1) * var(--module-font-scale, 1)));
   font-weight: 950;
   text-overflow: ellipsis;
   text-shadow:
@@ -1328,7 +1335,7 @@ body[data-preview-background="true"] .output-viewport::before {
 
 .totals-orange {
   grid-template-columns: minmax(0, 1fr) minmax(150px, 32%);
-  border-right: 5px solid var(--team-primary);
+  border-right: 5px solid var(--module-accent-color, var(--team-primary));
   border-left: 0;
 }
 
@@ -1377,8 +1384,8 @@ body[data-preview-background="true"] .output-viewport::before {
 
 .total-stats strong {
   display: block;
-  color: white;
-  font-size: clamp(18px, min(3.5cqw, 42cqh), 30px);
+  color: var(--module-text-color, white);
+  font-size: clamp(18px, calc(min(3.5cqw, 42cqh) * var(--module-font-scale, 1)), calc(30px * var(--module-font-scale, 1)));
   font-variant-numeric: tabular-nums;
 }
 
@@ -1412,15 +1419,15 @@ body[data-preview-background="true"] .output-viewport::before {
   align-items: center;
   padding: 0 14px;
   overflow: hidden;
-  color: #ffffff;
+  color: var(--module-text-color, #ffffff);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 48%),
-    var(--team-primary);
+    var(--module-accent-color, var(--team-primary));
 }
 
 .focus-nameplate span {
   overflow: hidden;
-  font-size: clamp(18px, min(6cqw, 46cqh), 30px);
+  font-size: clamp(18px, calc(min(6cqw, 46cqh) * var(--module-font-scale, 1)), calc(30px * var(--module-font-scale, 1)));
   font-weight: 950;
   text-overflow: ellipsis;
   text-shadow:
@@ -1435,7 +1442,7 @@ body[data-preview-background="true"] .output-viewport::before {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 44%),
-    rgba(3, 7, 12, 0.88);
+    rgba(3, 7, 12, calc(0.88 * var(--module-bg-alpha, 1)));
 }
 
 .focus-stat {
@@ -1454,8 +1461,8 @@ body[data-preview-background="true"] .output-viewport::before {
 }
 
 .focus-stat strong {
-  color: #ffffff;
-  font-size: clamp(14px, 15cqh, 22px);
+  color: var(--module-text-color, #ffffff);
+  font-size: clamp(14px, calc(15cqh * var(--module-font-scale, 1)), calc(22px * var(--module-font-scale, 1)));
   font-weight: 950;
   font-variant-numeric: tabular-nums;
 }
@@ -1463,7 +1470,7 @@ body[data-preview-background="true"] .output-viewport::before {
 .focus-stat span {
   overflow: hidden;
   max-width: 100%;
-  font-size: clamp(8px, 7cqh, 11px);
+  font-size: clamp(8px, calc(7cqh * var(--module-font-scale, 1)), calc(11px * var(--module-font-scale, 1)));
   font-weight: 900;
   text-overflow: ellipsis;
 }
@@ -1474,22 +1481,22 @@ body[data-preview-background="true"] .output-viewport::before {
   justify-items: center;
   gap: 2px;
   border-left: 1px solid rgba(255, 255, 255, 0.14);
-  color: #ffffff;
+  color: var(--module-text-color, #ffffff);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 44%),
-    rgba(3, 7, 12, 0.88);
+    rgba(3, 7, 12, calc(0.88 * var(--module-bg-alpha, 1)));
   font-weight: 950;
   font-variant-numeric: tabular-nums;
   text-transform: uppercase;
 }
 
 .focus-boost strong {
-  font-size: clamp(15px, 15cqh, 24px);
+  font-size: clamp(15px, calc(15cqh * var(--module-font-scale, 1)), calc(24px * var(--module-font-scale, 1)));
 }
 
 .focus-boost span {
   color: var(--muted);
-  font-size: clamp(8px, 7cqh, 11px);
+  font-size: clamp(8px, calc(7cqh * var(--module-font-scale, 1)), calc(11px * var(--module-font-scale, 1)));
   font-weight: 900;
 }
 
@@ -1502,5 +1509,5 @@ body[data-preview-background="true"] .output-viewport::before {
   display: block;
   width: var(--boost);
   height: 100%;
-  background: var(--team-primary);
+  background: var(--module-accent-color, var(--team-primary));
 }

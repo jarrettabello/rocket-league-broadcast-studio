@@ -42,6 +42,7 @@ const elements = {
   toggleFocusButton: document.querySelector("#toggleFocusButton"),
   previewGoalButton: document.querySelector("#previewGoalButton"),
   selectedHint: document.querySelector("#selectedHint"),
+  selectedModuleName: document.querySelector("#selectedModuleName"),
   selectedForm: document.querySelector("#selectedForm"),
   moduleX: document.querySelector("#moduleX"),
   moduleY: document.querySelector("#moduleY"),
@@ -49,6 +50,16 @@ const elements = {
   moduleH: document.querySelector("#moduleH"),
   moduleTeamSetting: document.querySelector("#moduleTeamSetting"),
   moduleTeam: document.querySelector("#moduleTeam"),
+  moduleFontFamily: document.querySelector("#moduleFontFamily"),
+  moduleFontScale: document.querySelector("#moduleFontScale"),
+  moduleFontScaleValue: document.querySelector("#moduleFontScaleValue"),
+  moduleTextColorPicker: document.querySelector("#moduleTextColorPicker"),
+  moduleTextColor: document.querySelector("#moduleTextColor"),
+  moduleAccentColorPicker: document.querySelector("#moduleAccentColorPicker"),
+  moduleAccentColor: document.querySelector("#moduleAccentColor"),
+  moduleBackgroundOpacity: document.querySelector("#moduleBackgroundOpacity"),
+  moduleBackgroundOpacityValue: document.querySelector("#moduleBackgroundOpacityValue"),
+  resetModuleAppearanceButton: document.querySelector("#resetModuleAppearanceButton"),
   saveButton: document.querySelector("#saveButton"),
   refreshButton: document.querySelector("#refreshButton"),
   resetButton: document.querySelector("#resetButton"),
@@ -123,6 +134,217 @@ function moduleLabel(module) {
   return labels[module.type] || module.type;
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function teamName(team) {
+  const meta = state.overlay?.meta || {};
+  return team === 1 ? meta.orangeName || "Orange Esports" : meta.blueName || "BlueWave";
+}
+
+function teamShort(team) {
+  const fallback = team === 1 ? "ORG" : "BLW";
+  const name = teamName(team)
+    .replace(/[^a-z0-9\s]/gi, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (name.length > 1) {
+    return name.map((part) => part[0]).join("").slice(0, 3).toUpperCase();
+  }
+
+  return name[0]?.slice(0, 3).toUpperCase() || fallback;
+}
+
+function teamLogoMarkup(team) {
+  const meta = state.overlay?.meta || {};
+  const url = team === 1 ? meta.orangeLogoUrl : meta.blueLogoUrl;
+
+  if (url) {
+    return `<img src="${escapeHtml(url)}" alt="" />`;
+  }
+
+  return escapeHtml(teamShort(team)[0] || (team === 1 ? "O" : "B"));
+}
+
+function moduleTeam(module) {
+  if (module.type === "roster" || module.type === "detailedRoster" || module.type === "teamTotals") {
+    return Number(module.settings?.team || 0);
+  }
+
+  return 0;
+}
+
+function fallbackPlayers(team) {
+  const short = teamShort(team);
+  const names = team === 1 ? ["Zen", "Rizzo", "Flux"] : ["Alpha", "Beta", "Charlie"];
+  return names.map((name, index) => ({
+    Name: `${short} ${name}`,
+    Boost: 100,
+    Score: [412, 366, 274, 398, 316, 228][team * 3 + index],
+    Goals: index === 0 ? 1 : 0,
+    Assists: index === 1 ? 1 : 0,
+    Saves: index + 2,
+    Shots: 3 - Math.min(index, 2),
+    Demos: index === 2 ? 1 : 0,
+    Ping: 24 + index * 4,
+  }));
+}
+
+function teamPlayers(team) {
+  const players = state.players.filter((player) => Number(player.TeamNum) === team);
+  return (players.length ? players : fallbackPlayers(team)).slice(0, 3);
+}
+
+function playerValue(player, key, fallback = 0) {
+  const value = Number(player?.[key]);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function seriesDots(team) {
+  const meta = state.overlay?.meta || {};
+  const dotCount = Math.max(1, Number(meta.seriesLength || 5));
+  const wins = Number(team === 1 ? meta.orangeSeriesWins || 0 : meta.blueSeriesWins || 0);
+
+  return Array.from({ length: dotCount }, (_, index) => {
+    const isWon = team === 1 ? index >= dotCount - wins : index < wins;
+    return `<i class="${isWon ? "is-won" : ""}"></i>`;
+  }).join("");
+}
+
+function scoreboardPreview() {
+  const meta = state.overlay?.meta || {};
+  const dotCount = Math.max(1, Number(meta.seriesLength || 5));
+  const blueWins = Number(meta.blueSeriesWins || 0);
+  const orangeWins = Number(meta.orangeSeriesWins || 0);
+  const game = Math.min(blueWins + orangeWins + 1, dotCount);
+
+  return `
+    <section class="mock-scorebug">
+      <div class="mock-scorebug-badge">Scoreboard</div>
+      <div class="mock-logo mock-logo-blue">${teamLogoMarkup(0)}</div>
+      <div class="mock-name mock-name-blue">${escapeHtml(teamName(0))}</div>
+      <div class="mock-score mock-score-blue">2</div>
+      <div class="mock-clock">3:24</div>
+      <div class="mock-score mock-score-orange">1</div>
+      <div class="mock-name mock-name-orange">${escapeHtml(teamName(1))}</div>
+      <div class="mock-logo mock-logo-orange">${teamLogoMarkup(1)}</div>
+      <div class="mock-series mock-series-blue">${seriesDots(0)}</div>
+      <div class="mock-game-label">Game ${game} | Best of ${dotCount}</div>
+      <div class="mock-series mock-series-orange">${seriesDots(1)}</div>
+    </section>
+  `;
+}
+
+function rosterPreview(team) {
+  const rows = teamPlayers(team)
+    .map(
+      (player) => `
+        <p>
+          <span>${escapeHtml(player.Name || "Player")}</span>
+          <strong>${playerValue(player, "Boost", 100)}</strong>
+        </p>
+      `,
+    )
+    .join("");
+
+  return `
+    <section class="mock-roster">
+      <h3>${team === 1 ? "Orange" : "Blue"} Roster</h3>
+      ${rows}
+    </section>
+  `;
+}
+
+function detailedRosterPreview(team) {
+  const rows = teamPlayers(team)
+    .map(
+      (player, index) => `
+        <div class="mock-stat-row">
+          <span>${escapeHtml(player.Name || "Player")}</span>
+          <b>${playerValue(player, "Score", 300 - index * 40)}</b>
+          <b>${playerValue(player, "Goals", index === 0 ? 1 : 0)}</b>
+          <b>${playerValue(player, "Assists", index === 1 ? 1 : 0)}</b>
+          <b>${playerValue(player, "Shots", 3 - Math.min(index, 2))}</b>
+          <b>${playerValue(player, "Saves", index + 2)}</b>
+          <em>+${playerValue(player, "Ping", 24 + index * 4)}</em>
+        </div>
+      `,
+    )
+    .join("");
+
+  return `
+    <section class="mock-detail">
+      <h3>${team === 1 ? "Orange" : "Blue"} Detailed Roster</h3>
+      ${rows}
+    </section>
+  `;
+}
+
+function teamTotalsPreview() {
+  return `
+    <section class="mock-totals">
+      <h3>Team Totals</h3>
+      <div><strong>7</strong><span>Shots</span></div>
+      <div><strong>4</strong><span>Saves</span></div>
+      <div><strong>2</strong><span>Demos</span></div>
+      <div class="mock-divider"></div>
+      <div><strong>7</strong><span>Shots</span></div>
+      <div><strong>4</strong><span>Saves</span></div>
+      <div><strong>2</strong><span>Demos</span></div>
+    </section>
+  `;
+}
+
+function focusedPlayerPreview() {
+  const player = teamPlayers(0)[0];
+  return `
+    <section class="mock-focus">
+      <div class="mock-avatar">*</div>
+      <div class="mock-focus-main">
+        <h3>Focused Player</h3>
+        <strong>${escapeHtml(player.Name || "BLW Alpha")}</strong>
+        <span>${escapeHtml(teamName(0))}</span>
+      </div>
+      <div class="mock-focus-stat"><small>Score</small><b>${playerValue(player, "Score", 412)}</b></div>
+      <div class="mock-focus-stat"><small>Goals</small><b>${playerValue(player, "Goals", 1)}</b></div>
+      <div class="mock-focus-stat"><small>Assists</small><b>${playerValue(player, "Assists", 0)}</b></div>
+      <div class="mock-focus-stat"><small>Saves</small><b>${playerValue(player, "Saves", 2)}</b></div>
+      <div class="mock-focus-stat"><small>Shots</small><b>${playerValue(player, "Shots", 3)}</b></div>
+    </section>
+  `;
+}
+
+function ballSpeedPreview() {
+  return `
+    <section class="mock-speed">
+      <h3>Ball Speed</h3>
+      <div class="mock-gauge"></div>
+      <strong>78</strong>
+      <span>MPH</span>
+    </section>
+  `;
+}
+
+function modulePreviewHtml(module) {
+  const team = moduleTeam(module);
+
+  if (module.type === "scoreboard") return scoreboardPreview();
+  if (module.type === "roster") return rosterPreview(team);
+  if (module.type === "detailedRoster") return detailedRosterPreview(team);
+  if (module.type === "teamTotals") return teamTotalsPreview();
+  if (module.type === "focusedPlayer") return focusedPlayerPreview();
+  if (module.type === "ballSpeed") return ballSpeedPreview();
+
+  return `<section class="mock-panel"><h3 class="mock-title">${escapeHtml(moduleLabel(module))}</h3></section>`;
+}
+
 function snap(value) {
   return Math.round(value / gridSize) * gridSize;
 }
@@ -155,6 +377,36 @@ function setColorControl(textInput, pickerInput, value) {
   const color = normalizeColorInput(value, pickerInput.value || "#ffffff");
   textInput.value = color;
   pickerInput.value = color;
+}
+
+function setOptionalColorControl(textInput, pickerInput, value, fallback) {
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    textInput.value = "";
+    pickerInput.value = fallback;
+    return;
+  }
+
+  const color = normalizeColorInput(raw, fallback);
+  textInput.value = color;
+  pickerInput.value = color;
+}
+
+function moduleAppearance(module) {
+  module.settings = module.settings || {};
+  module.settings.appearance = module.settings.appearance || {};
+  return module.settings.appearance;
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+
+  return Math.max(min, Math.min(max, number));
 }
 
 function fileAsDataUrl(file) {
@@ -283,55 +535,25 @@ function setModulesVisible(modules, isVisible) {
 
 function renderModuleList() {
   elements.moduleList.replaceChildren();
-  const groupOrder = ["core", "compact-rosters", "detailed-rosters", "stats", "focus", "other"];
-  const groupsById = new Map();
+  const moduleRows = [
+    { label: "Scoreboard", modules: state.overlay.modules.filter((module) => module.type === "scoreboard") },
+    { label: "Team Rosters", modules: state.overlay.modules.filter((module) => module.type === "roster") },
+    { label: "Detailed Rosters", modules: state.overlay.modules.filter((module) => module.type === "detailedRoster") },
+    { label: "Focused Player", modules: state.overlay.modules.filter((module) => module.type === "focusedPlayer") },
+    { label: "Team Totals", modules: state.overlay.modules.filter((module) => module.type === "teamTotals") },
+    { label: "Stats (Ball Speed)", modules: state.overlay.modules.filter((module) => module.type === "ballSpeed") },
+  ].filter((entry) => entry.modules.length > 0);
 
-  for (const module of state.overlay.modules) {
-    const group = moduleGroup(module);
-    let entry = groupsById.get(group.id);
-
-    if (!entry) {
-      entry = { ...group, modules: [] };
-      groupsById.set(group.id, entry);
-    }
-
-    entry.modules.push(module);
-  }
-
-  const groups = [...groupsById.values()].sort(
-    (a, b) => groupOrder.indexOf(a.id) - groupOrder.indexOf(b.id),
-  );
-
-  for (const group of groups) {
-    const groupNode = document.createElement("div");
-    groupNode.className = "module-group";
-    const anyVisible = group.modules.some((module) => module.visible);
-    groupNode.dataset.visible = anyVisible;
-    groupNode.innerHTML = `
-      <div class="module-group-header">
-        <span class="group-icon" aria-hidden="true"></span>
-        <span>${group.label}</span>
-        <button class="visibility-toggle group-visibility-toggle" type="button" aria-label="${anyVisible ? "Hide" : "Show"} ${group.label}" title="${anyVisible ? "Hide" : "Show"} ${group.label}">
-          ${eyeIcon(anyVisible)}
-        </button>
-      </div>
-      <div class="module-group-items"></div>
-    `;
-
-    groupNode.querySelector(".group-visibility-toggle").addEventListener("click", () => {
-      setModulesVisible(group.modules, !anyVisible);
-    });
-
-    const items = groupNode.querySelector(".module-group-items");
-
-    for (const module of group.modules) {
-      const row = document.createElement("div");
-      row.className = "module-row";
-      row.dataset.selected = isSelected(module.id);
-      row.dataset.visible = module.visible;
-      row.innerHTML = `
+  for (const entry of moduleRows) {
+    const module = entry.modules.find((item) => isSelected(item.id)) || entry.modules[0];
+    const anyVisible = entry.modules.some((item) => item.visible);
+    const row = document.createElement("div");
+    row.className = "module-row";
+    row.dataset.selected = entry.modules.some((item) => isSelected(item.id));
+    row.dataset.visible = anyVisible;
+    row.innerHTML = `
         <button class="module-select" type="button">
-          <strong>${moduleLabel(module)}</strong>
+          <strong>${entry.label}</strong>
           <span>${module.type}</span>
         </button>
         ${
@@ -346,47 +568,47 @@ function renderModuleList() {
             `
             : ""
         }
-        <button class="visibility-toggle" type="button" aria-label="${module.visible ? "Hide" : "Show"} ${moduleLabel(module)}" title="${module.visible ? "Hide" : "Show"}">
-          ${eyeIcon(module.visible)}
+        <strong class="module-state">${anyVisible ? "ON" : "OFF"}</strong>
+        <button class="visibility-toggle" type="button" aria-label="${anyVisible ? "Hide" : "Show"} ${entry.label}" title="${anyVisible ? "Hide" : "Show"}">
+          ${eyeIcon(anyVisible)}
         </button>
       `;
-      row.addEventListener("click", (event) => {
-        if (event.shiftKey) {
-          toggleModuleSelection(module.id);
-        } else {
-          selectModule(module.id);
+    row.addEventListener("click", (event) => {
+      if (event.shiftKey) {
+        toggleModuleSelection(module.id);
+      } else {
+        selectModule(module.id);
+      }
+    });
+    row.querySelector(".module-team-select")?.addEventListener("pointerdown", (event) => {
+      event.stopPropagation();
+    });
+    row.querySelector(".module-team-select")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+    row.querySelector(".module-team-select")?.addEventListener("change", (event) => {
+      event.stopPropagation();
+      module.settings = { ...(module.settings || {}), team: Number(event.currentTarget.value || 0) };
+      render();
+      markDirty();
+    });
+    row.querySelector(".visibility-toggle").addEventListener("click", (event) => {
+      event.stopPropagation();
+      setModulesVisible(entry.modules, !anyVisible);
+      if (!anyVisible) {
+        selectModule(module.id);
+      } else {
+        for (const item of entry.modules) {
+          state.selectedIds.delete(item.id);
         }
-      });
-      row.querySelector(".module-team-select")?.addEventListener("pointerdown", (event) => {
-        event.stopPropagation();
-      });
-      row.querySelector(".module-team-select")?.addEventListener("click", (event) => {
-        event.stopPropagation();
-      });
-      row.querySelector(".module-team-select")?.addEventListener("change", (event) => {
-        event.stopPropagation();
-        module.settings = { ...(module.settings || {}), team: Number(event.currentTarget.value || 0) };
+        if (entry.modules.some((item) => item.id === state.selectedId)) {
+          state.selectedId = state.selectedIds.values().next().value || null;
+        }
         render();
-        markDirty();
-      });
-      row.querySelector(".visibility-toggle").addEventListener("click", (event) => {
-        event.stopPropagation();
-        module.visible = !module.visible;
-        if (module.visible) {
-          selectModule(module.id);
-        } else {
-          state.selectedIds.delete(module.id);
-          if (state.selectedId === module.id) {
-            state.selectedId = state.selectedIds.values().next().value || null;
-          }
-          render();
-        }
-        markDirty();
-      });
-      items.append(row);
-    }
-
-    elements.moduleList.append(groupNode);
+      }
+      markDirty();
+    });
+    elements.moduleList.append(row);
   }
 }
 
@@ -417,6 +639,8 @@ function renderCanvas() {
     const node = document.createElement("div");
     node.className = "canvas-module";
     node.dataset.id = module.id;
+    node.dataset.type = module.type;
+    node.dataset.team = moduleTeam(module) === 1 ? "orange" : "blue";
     node.dataset.selected = isSelected(module.id);
     node.dataset.visible = module.visible;
     node.dataset.toolsPlacement = module.y * ratio < 38 ? "bottom" : "top";
@@ -424,7 +648,7 @@ function renderCanvas() {
     node.style.top = `${module.y * ratio}px`;
     node.style.width = `${module.w * ratio}px`;
     node.style.height = `${moduleDisplayHeight(module) * ratio}px`;
-    node.textContent = moduleLabel(module);
+    node.innerHTML = `<span class="selection-label">${escapeHtml(moduleLabel(module))}</span>`;
     node.addEventListener("pointerdown", (event) => startDrag(event, module.id, "move"));
 
     const tools = document.createElement("div");
@@ -519,6 +743,7 @@ function renderSelectedForm() {
   const module = selectedModule();
   elements.selectedForm.hidden = !module;
   elements.selectedHint.hidden = Boolean(module);
+  elements.selectedModuleName.textContent = module ? moduleLabel(module) : "None";
 
   if (!module) {
     return;
@@ -533,6 +758,17 @@ function renderSelectedForm() {
   if (module.type === "teamTotals") {
     elements.moduleTeam.value = String(module.settings?.team || 0);
   }
+
+  const appearance = module.settings?.appearance || {};
+  const fontScale = clampNumber(appearance.fontScale, 60, 160, 100);
+  const backgroundOpacity = clampNumber(appearance.backgroundOpacity, 30, 100, 100);
+  elements.moduleFontFamily.value = appearance.fontFamily || "";
+  elements.moduleFontScale.value = fontScale;
+  elements.moduleFontScaleValue.textContent = `${fontScale}%`;
+  setOptionalColorControl(elements.moduleTextColor, elements.moduleTextColorPicker, appearance.textColor, "#ffffff");
+  setOptionalColorControl(elements.moduleAccentColor, elements.moduleAccentColorPicker, appearance.accentColor, "#0062ff");
+  elements.moduleBackgroundOpacity.value = backgroundOpacity;
+  elements.moduleBackgroundOpacityValue.textContent = `${backgroundOpacity}%`;
 }
 
 function render() {
@@ -610,6 +846,60 @@ function updateSelectedModule() {
 
   renderModuleList();
   renderCanvas();
+  markDirty();
+}
+
+function updateSelectedAppearance() {
+  const module = selectedModule();
+
+  if (!module) {
+    return;
+  }
+
+  const appearance = moduleAppearance(module);
+  const fontFamily = elements.moduleFontFamily.value;
+  const textColor = String(elements.moduleTextColor.value || "").trim();
+  const accentColor = String(elements.moduleAccentColor.value || "").trim();
+
+  if (fontFamily) {
+    appearance.fontFamily = fontFamily;
+  } else {
+    delete appearance.fontFamily;
+  }
+
+  appearance.fontScale = clampNumber(elements.moduleFontScale.value, 60, 160, 100);
+  appearance.backgroundOpacity = clampNumber(elements.moduleBackgroundOpacity.value, 30, 100, 100);
+
+  if (textColor) {
+    appearance.textColor = normalizeColorInput(textColor, "#ffffff");
+    setOptionalColorControl(elements.moduleTextColor, elements.moduleTextColorPicker, appearance.textColor, "#ffffff");
+  } else {
+    delete appearance.textColor;
+    setOptionalColorControl(elements.moduleTextColor, elements.moduleTextColorPicker, "", "#ffffff");
+  }
+
+  if (accentColor) {
+    appearance.accentColor = normalizeColorInput(accentColor, "#0062ff");
+    setOptionalColorControl(elements.moduleAccentColor, elements.moduleAccentColorPicker, appearance.accentColor, "#0062ff");
+  } else {
+    delete appearance.accentColor;
+    setOptionalColorControl(elements.moduleAccentColor, elements.moduleAccentColorPicker, "", "#0062ff");
+  }
+
+  elements.moduleFontScaleValue.textContent = `${appearance.fontScale}%`;
+  elements.moduleBackgroundOpacityValue.textContent = `${appearance.backgroundOpacity}%`;
+  markDirty();
+}
+
+function resetSelectedAppearance() {
+  const module = selectedModule();
+
+  if (!module?.settings?.appearance) {
+    return;
+  }
+
+  delete module.settings.appearance;
+  renderSelectedForm();
   markDirty();
 }
 
@@ -905,6 +1195,25 @@ elements.clearOrangeLogoButton.addEventListener("click", () =>
   elements.moduleTeam,
 ].forEach((input) => input.addEventListener("input", updateSelectedModule));
 
+[
+  elements.moduleFontFamily,
+  elements.moduleFontScale,
+  elements.moduleBackgroundOpacity,
+].forEach((input) => input.addEventListener("input", updateSelectedAppearance));
+
+[
+  [elements.moduleTextColorPicker, elements.moduleTextColor],
+  [elements.moduleAccentColorPicker, elements.moduleAccentColor],
+].forEach(([picker, text]) => {
+  picker.addEventListener("input", () => {
+    text.value = picker.value;
+    updateSelectedAppearance();
+  });
+
+  text.addEventListener("change", updateSelectedAppearance);
+});
+
+elements.resetModuleAppearanceButton.addEventListener("click", resetSelectedAppearance);
 elements.saveButton.addEventListener("click", saveState);
 elements.refreshButton.addEventListener("click", refreshOutput);
 elements.resetButton.addEventListener("click", resetState);

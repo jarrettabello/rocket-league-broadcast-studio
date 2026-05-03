@@ -391,7 +391,45 @@ function explicitGoalInfo(message) {
 
 function moduleStyle(module) {
   const height = module.type === "scoreboard" ? Math.round(module.w / scoreboardAspect) : module.h;
-  return `left:${module.x}px;top:${module.y}px;width:${module.w}px;height:${height}px;`;
+  return `left:${module.x}px;top:${module.y}px;width:${module.w}px;height:${height}px;${moduleAppearanceStyle(module)}`;
+}
+
+function moduleAppearanceStyle(module) {
+  const appearance = module.settings?.appearance || {};
+  const styles = [];
+  const fontFamilies = {
+    inter: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    rajdhani: 'Rajdhani, "Arial Narrow", ui-sans-serif, sans-serif',
+    orbitron: 'Orbitron, Rajdhani, ui-sans-serif, sans-serif',
+    system: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  };
+  const fontFamily = fontFamilies[appearance.fontFamily];
+  const fontScale = Math.max(0.6, Math.min(1.6, Number(appearance.fontScale || 100) / 100));
+  const backgroundOpacity = Math.max(0.3, Math.min(1, Number(appearance.backgroundOpacity || 100) / 100));
+  const textColor = normalizeTeamColor(appearance.textColor, "");
+  const accentColor = normalizeTeamColor(appearance.accentColor, "");
+
+  if (fontFamily) {
+    styles.push(`--module-font-family:${fontFamily}`);
+  }
+
+  if (fontScale !== 1) {
+    styles.push(`--module-font-scale:${fontScale}`);
+  }
+
+  if (backgroundOpacity !== 1) {
+    styles.push(`--module-bg-alpha:${backgroundOpacity}`);
+  }
+
+  if (textColor) {
+    styles.push(`--module-text-color:${textColor}`);
+  }
+
+  if (accentColor) {
+    styles.push(`--module-accent-color:${accentColor}`);
+  }
+
+  return styles.length ? `${styles.join(";")};` : "";
 }
 
 function moduleExitDirection(module) {

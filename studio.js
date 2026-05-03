@@ -1,6 +1,21 @@
 const canvasSize = { width: 1600, height: 900 };
 const gridSize = 20;
 const scoreboardAspect = 1983 / 290;
+const defaultScoreboardTeamNameArea = 24;
+const defaultTeamTotalsNameArea = 32;
+const detailedRosterMetricOptions = [
+  { key: "score", label: "Score" },
+  { key: "goals", label: "Goals" },
+  { key: "saves", label: "Saves" },
+  { key: "assists", label: "Assists" },
+  { key: "shots", label: "Shots" },
+  { key: "demos", label: "Demos" },
+  { key: "ping", label: "Ping" },
+];
+const teamTotalsMetricOptions = detailedRosterMetricOptions.filter((metric) => metric.key !== "ping");
+const defaultDetailedRosterMetrics = ["score", "goals", "saves", "assists", "demos"];
+const defaultFocusedPlayerMetrics = ["score", "goals", "shots", "assists", "saves"];
+const defaultTeamTotalsMetrics = ["goals", "saves", "assists", "demos"];
 const state = {
   overlay: null,
   selectedId: null,
@@ -13,8 +28,8 @@ const state = {
 const elements = {
   canvas: document.querySelector("#canvas"),
   moduleList: document.querySelector("#moduleList"),
-  connectionStatus: document.querySelector("#connectionStatus"),
   matchTitle: document.querySelector("#matchTitle"),
+  globalFontFamily: document.querySelector("#globalFontFamily"),
   blueName: document.querySelector("#blueName"),
   blueLogoUrl: document.querySelector("#blueLogoUrl"),
   blueLogoUpload: document.querySelector("#blueLogoUpload"),
@@ -41,6 +56,7 @@ const elements = {
   focusedPlayerId: document.querySelector("#focusedPlayerId"),
   toggleFocusButton: document.querySelector("#toggleFocusButton"),
   previewGoalButton: document.querySelector("#previewGoalButton"),
+  previewCountdownButton: document.querySelector("#previewCountdownButton"),
   selectedHint: document.querySelector("#selectedHint"),
   selectedModuleName: document.querySelector("#selectedModuleName"),
   selectedForm: document.querySelector("#selectedForm"),
@@ -51,18 +67,54 @@ const elements = {
   moduleTeamSetting: document.querySelector("#moduleTeamSetting"),
   moduleTeam: document.querySelector("#moduleTeam"),
   moduleFontFamily: document.querySelector("#moduleFontFamily"),
+  moduleFontScaleField: document.querySelector("#moduleFontScaleField"),
   moduleFontScale: document.querySelector("#moduleFontScale"),
+  moduleFontScaleValueRow: document.querySelector("#moduleFontScaleValueRow"),
   moduleFontScaleValue: document.querySelector("#moduleFontScaleValue"),
+  moduleTextColorField: document.querySelector("#moduleTextColorField"),
   moduleTextColorPicker: document.querySelector("#moduleTextColorPicker"),
   moduleTextColor: document.querySelector("#moduleTextColor"),
+  moduleAccentColorField: document.querySelector("#moduleAccentColorField"),
   moduleAccentColorPicker: document.querySelector("#moduleAccentColorPicker"),
   moduleAccentColor: document.querySelector("#moduleAccentColor"),
   moduleBackgroundOpacity: document.querySelector("#moduleBackgroundOpacity"),
   moduleBackgroundOpacityValue: document.querySelector("#moduleBackgroundOpacityValue"),
+  scoreboardElementPanel: document.querySelector("#scoreboardElementPanel"),
+  scoreboardElementTarget: document.querySelector("#scoreboardElementTarget"),
+  scoreboardElementFontFamily: document.querySelector("#scoreboardElementFontFamily"),
+  scoreboardElementScale: document.querySelector("#scoreboardElementScale"),
+  scoreboardElementScaleValue: document.querySelector("#scoreboardElementScaleValue"),
+  scoreboardElementColorPicker: document.querySelector("#scoreboardElementColorPicker"),
+  scoreboardElementColor: document.querySelector("#scoreboardElementColor"),
+  resetScoreboardElementStyleButton: document.querySelector("#resetScoreboardElementStyleButton"),
+  scoreboardTeamNameScalePanel: document.querySelector("#scoreboardTeamNameScalePanel"),
+  blueTeamFontScaleValue: document.querySelector("#blueTeamFontScaleValue"),
+  orangeTeamFontScaleValue: document.querySelector("#orangeTeamFontScaleValue"),
+  scoreboardLayoutPanel: document.querySelector("#scoreboardLayoutPanel"),
+  scoreboardTeamNameArea: document.querySelector("#scoreboardTeamNameArea"),
+  scoreboardTeamNameAreaValue: document.querySelector("#scoreboardTeamNameAreaValue"),
+  resetScoreboardLayoutButton: document.querySelector("#resetScoreboardLayoutButton"),
+  teamTotalsLayoutPanel: document.querySelector("#teamTotalsLayoutPanel"),
+  teamTotalsNameArea: document.querySelector("#teamTotalsNameArea"),
+  teamTotalsNameAreaValue: document.querySelector("#teamTotalsNameAreaValue"),
+  teamTotalsNameScale: document.querySelector("#teamTotalsNameScale"),
+  teamTotalsNameScaleValue: document.querySelector("#teamTotalsNameScaleValue"),
+  teamTotalsMetricScale: document.querySelector("#teamTotalsMetricScale"),
+  teamTotalsMetricScaleValue: document.querySelector("#teamTotalsMetricScaleValue"),
+  resetTeamTotalsLayoutButton: document.querySelector("#resetTeamTotalsLayoutButton"),
+  teamTotalsMetricsPanel: document.querySelector("#teamTotalsMetricsPanel"),
+  teamTotalsMetricChoices: document.querySelector("#teamTotalsMetricChoices"),
+  resetTeamTotalsMetricsButton: document.querySelector("#resetTeamTotalsMetricsButton"),
+  detailedRosterMetricsPanel: document.querySelector("#detailedRosterMetricsPanel"),
+  detailedRosterMetricChoices: document.querySelector("#detailedRosterMetricChoices"),
+  resetDetailedRosterMetricsButton: document.querySelector("#resetDetailedRosterMetricsButton"),
+  focusedPlayerMetricsPanel: document.querySelector("#focusedPlayerMetricsPanel"),
+  focusedPlayerMetricChoices: document.querySelector("#focusedPlayerMetricChoices"),
+  resetFocusedPlayerMetricsButton: document.querySelector("#resetFocusedPlayerMetricsButton"),
   resetModuleAppearanceButton: document.querySelector("#resetModuleAppearanceButton"),
   saveButton: document.querySelector("#saveButton"),
   refreshButton: document.querySelector("#refreshButton"),
-  resetButton: document.querySelector("#resetButton"),
+  resetDefaultsButton: document.querySelector("#resetDefaultsButton"),
 };
 
 function wsUrl(path) {
@@ -108,6 +160,14 @@ function toggleModuleSelection(id) {
   }
 
   render();
+}
+
+function deselectModules() {
+  if (!state.selectedId && state.selectedIds.size === 0) {
+    return;
+  }
+
+  selectModule(null);
 }
 
 function playerKey(player) {
@@ -202,6 +262,10 @@ function teamPlayers(team) {
   return (players.length ? players : fallbackPlayers(team)).slice(0, 3);
 }
 
+function availablePlayers() {
+  return state.players.length ? state.players : [...fallbackPlayers(0), ...fallbackPlayers(1)];
+}
+
 function playerValue(player, key, fallback = 0) {
   const value = Number(player?.[key]);
   return Number.isFinite(value) ? value : fallback;
@@ -209,7 +273,8 @@ function playerValue(player, key, fallback = 0) {
 
 function seriesDots(team) {
   const meta = state.overlay?.meta || {};
-  const dotCount = Math.max(1, Number(meta.seriesLength || 5));
+  const seriesLength = Math.max(1, Number(meta.seriesLength || 5));
+  const dotCount = Math.ceil(seriesLength / 2);
   const wins = Number(team === 1 ? meta.orangeSeriesWins || 0 : meta.blueSeriesWins || 0);
 
   return Array.from({ length: dotCount }, (_, index) => {
@@ -220,10 +285,11 @@ function seriesDots(team) {
 
 function scoreboardPreview() {
   const meta = state.overlay?.meta || {};
-  const dotCount = Math.max(1, Number(meta.seriesLength || 5));
+  const seriesLength = Math.max(1, Number(meta.seriesLength || 5));
+  const dotCount = Math.ceil(seriesLength / 2);
   const blueWins = Number(meta.blueSeriesWins || 0);
   const orangeWins = Number(meta.orangeSeriesWins || 0);
-  const game = Math.min(blueWins + orangeWins + 1, dotCount);
+  const game = Math.min(blueWins + orangeWins + 1, seriesLength);
 
   return `
     <section class="mock-scorebug">
@@ -236,7 +302,7 @@ function scoreboardPreview() {
       <div class="mock-name mock-name-orange">${escapeHtml(teamName(1))}</div>
       <div class="mock-logo mock-logo-orange">${teamLogoMarkup(1)}</div>
       <div class="mock-series mock-series-blue">${seriesDots(0)}</div>
-      <div class="mock-game-label">Game ${game} | Best of ${dotCount}</div>
+      <div class="mock-game-label">Game ${game} | Best of ${seriesLength}</div>
       <div class="mock-series mock-series-orange">${seriesDots(1)}</div>
     </section>
   `;
@@ -263,17 +329,22 @@ function rosterPreview(team) {
 }
 
 function detailedRosterPreview(team) {
+  const metricKeys = detailedRosterMetrics();
+  const metricMap = {
+    score: { label: "Score", value: (player, index) => playerValue(player, "Score", 300 - index * 40) },
+    goals: { label: "Goals", value: (player, index) => playerValue(player, "Goals", index === 0 ? 1 : 0) },
+    saves: { label: "Saves", value: (player, index) => playerValue(player, "Saves", index + 2) },
+    assists: { label: "Assists", value: (player, index) => playerValue(player, "Assists", index === 1 ? 1 : 0) },
+    shots: { label: "Shots", value: (player, index) => playerValue(player, "Shots", 3 - Math.min(index, 2)) },
+    demos: { label: "Demos", value: (player, index) => playerValue(player, "Demos", index === 2 ? 1 : 0) },
+    ping: { label: "Ping", value: (player, index) => `+${playerValue(player, "Ping", 24 + index * 4)}` },
+  };
   const rows = teamPlayers(team)
     .map(
       (player, index) => `
         <div class="mock-stat-row">
           <span>${escapeHtml(player.Name || "Player")}</span>
-          <b>${playerValue(player, "Score", 300 - index * 40)}</b>
-          <b>${playerValue(player, "Goals", index === 0 ? 1 : 0)}</b>
-          <b>${playerValue(player, "Assists", index === 1 ? 1 : 0)}</b>
-          <b>${playerValue(player, "Shots", 3 - Math.min(index, 2))}</b>
-          <b>${playerValue(player, "Saves", index + 2)}</b>
-          <em>+${playerValue(player, "Ping", 24 + index * 4)}</em>
+          ${metricKeys.map((key) => `<b title="${metricMap[key].label}">${metricMap[key].value(player, index)}</b>`).join("")}
         </div>
       `,
     )
@@ -288,22 +359,40 @@ function detailedRosterPreview(team) {
 }
 
 function teamTotalsPreview() {
+  const totals = teamPlayers(0).reduce(
+    (result, player) => ({
+      score: result.score + playerValue(player, "Score", 0),
+      goals: result.goals + playerValue(player, "Goals", 0),
+      saves: result.saves + playerValue(player, "Saves", 0),
+      assists: result.assists + playerValue(player, "Assists", 0),
+      shots: result.shots + playerValue(player, "Shots", 0),
+      demos: result.demos + playerValue(player, "Demos", 0),
+    }),
+    { score: 0, goals: 0, saves: 0, assists: 0, shots: 0, demos: 0 },
+  );
+  const metricLabels = new Map(teamTotalsMetricOptions.map((metric) => [metric.key, metric.label]));
+
   return `
     <section class="mock-totals">
       <h3>Team Totals</h3>
-      <div><strong>7</strong><span>Shots</span></div>
-      <div><strong>4</strong><span>Saves</span></div>
-      <div><strong>2</strong><span>Demos</span></div>
-      <div class="mock-divider"></div>
-      <div><strong>7</strong><span>Shots</span></div>
-      <div><strong>4</strong><span>Saves</span></div>
-      <div><strong>2</strong><span>Demos</span></div>
+      ${teamTotalsMetrics().map((key) => `<div><strong>${totals[key]}</strong><span>${metricLabels.get(key)}</span></div>`).join("")}
     </section>
   `;
 }
 
 function focusedPlayerPreview() {
   const player = teamPlayers(0)[0];
+  const metricKeys = focusedPlayerMetrics();
+  const metricMap = {
+    score: { label: "Score", value: (player) => playerValue(player, "Score", 412) },
+    goals: { label: "Goals", value: (player) => playerValue(player, "Goals", 1) },
+    saves: { label: "Saves", value: (player) => playerValue(player, "Saves", 2) },
+    assists: { label: "Assists", value: (player) => playerValue(player, "Assists", 0) },
+    shots: { label: "Shots", value: (player) => playerValue(player, "Shots", 3) },
+    demos: { label: "Demos", value: (player) => playerValue(player, "Demos", 0) },
+    ping: { label: "Ping", value: (player) => `+${playerValue(player, "Ping", 24)}` },
+  };
+
   return `
     <section class="mock-focus">
       <div class="mock-avatar">*</div>
@@ -312,11 +401,7 @@ function focusedPlayerPreview() {
         <strong>${escapeHtml(player.Name || "BLW Alpha")}</strong>
         <span>${escapeHtml(teamName(0))}</span>
       </div>
-      <div class="mock-focus-stat"><small>Score</small><b>${playerValue(player, "Score", 412)}</b></div>
-      <div class="mock-focus-stat"><small>Goals</small><b>${playerValue(player, "Goals", 1)}</b></div>
-      <div class="mock-focus-stat"><small>Assists</small><b>${playerValue(player, "Assists", 0)}</b></div>
-      <div class="mock-focus-stat"><small>Saves</small><b>${playerValue(player, "Saves", 2)}</b></div>
-      <div class="mock-focus-stat"><small>Shots</small><b>${playerValue(player, "Shots", 3)}</b></div>
+      ${metricKeys.map((key) => `<div class="mock-focus-stat"><small>${metricMap[key].label}</small><b>${metricMap[key].value(player)}</b></div>`).join("")}
     </section>
   `;
 }
@@ -399,6 +484,38 @@ function moduleAppearance(module) {
   return module.settings.appearance;
 }
 
+function scoreboardElementAppearance(module, key) {
+  const appearance = moduleAppearance(module);
+  appearance.scoreboardElements = appearance.scoreboardElements || {};
+  appearance.scoreboardElements[key] = appearance.scoreboardElements[key] || {};
+  return appearance.scoreboardElements[key];
+}
+
+function scoreboardLayout(module) {
+  const appearance = moduleAppearance(module);
+  appearance.scoreboardLayout = appearance.scoreboardLayout || {};
+  return appearance.scoreboardLayout;
+}
+
+function teamTotalsLayout(module) {
+  const appearance = moduleAppearance(module);
+  appearance.teamTotalsLayout = appearance.teamTotalsLayout || {};
+  return appearance.teamTotalsLayout;
+}
+
+function pruneScoreboardElementAppearance(module, key) {
+  const appearance = module.settings?.appearance;
+  const element = appearance?.scoreboardElements?.[key];
+
+  if (element && Object.keys(element).length === 0) {
+    delete appearance.scoreboardElements[key];
+  }
+
+  if (appearance?.scoreboardElements && Object.keys(appearance.scoreboardElements).length === 0) {
+    delete appearance.scoreboardElements;
+  }
+}
+
 function clampNumber(value, min, max, fallback) {
   const number = Number(value);
 
@@ -407,6 +524,255 @@ function clampNumber(value, min, max, fallback) {
   }
 
   return Math.max(min, Math.min(max, number));
+}
+
+function scoreboardTeamNameArea(module) {
+  const layout = module?.settings?.appearance?.scoreboardLayout || {};
+  return clampNumber(layout.teamNameArea, 18, 30, defaultScoreboardTeamNameArea);
+}
+
+function teamTotalsNameArea(module) {
+  const layout = module?.settings?.appearance?.teamTotalsLayout || {};
+  return clampNumber(layout.nameArea, 24, 56, defaultTeamTotalsNameArea);
+}
+
+function teamTotalsNameScale(module) {
+  const layout = module?.settings?.appearance?.teamTotalsLayout || {};
+  return clampNumber(layout.nameScale, 60, 180, 100);
+}
+
+function teamTotalsMetricScale(module) {
+  const layout = module?.settings?.appearance?.teamTotalsLayout || {};
+  return clampNumber(layout.metricScale, 60, 180, 100);
+}
+
+function detailedRosterMetrics() {
+  const validKeys = new Set(detailedRosterMetricOptions.map((metric) => metric.key));
+  const metrics = Array.isArray(state.overlay?.meta?.detailedRosterMetrics)
+    ? state.overlay.meta.detailedRosterMetrics.filter((metric) => validKeys.has(metric))
+    : [];
+
+  return metrics.length ? metrics : [...defaultDetailedRosterMetrics];
+}
+
+function focusedPlayerMetrics() {
+  const validKeys = new Set(detailedRosterMetricOptions.map((metric) => metric.key));
+  const metrics = Array.isArray(state.overlay?.meta?.focusedPlayerMetrics)
+    ? state.overlay.meta.focusedPlayerMetrics.filter((metric) => validKeys.has(metric))
+    : [];
+
+  return metrics.length ? metrics : [...defaultFocusedPlayerMetrics];
+}
+
+function teamTotalsMetrics() {
+  const validKeys = new Set(teamTotalsMetricOptions.map((metric) => metric.key));
+  const metrics = Array.isArray(state.overlay?.meta?.teamTotalsMetrics)
+    ? state.overlay.meta.teamTotalsMetrics.filter((metric) => validKeys.has(metric))
+    : [];
+
+  return metrics.length ? metrics : [...defaultTeamTotalsMetrics];
+}
+
+function orderedMetricOptions(selectedKeys, options) {
+  const selected = new Set(selectedKeys);
+  const selectedOptions = selectedKeys
+    .map((key) => options.find((metric) => metric.key === key))
+    .filter(Boolean);
+  const remainingOptions = options.filter((metric) => !selected.has(metric.key));
+  return [...selectedOptions, ...remainingOptions];
+}
+
+function checkedMetricKeys(container) {
+  return [...container.querySelectorAll(".metric-choice")]
+    .filter((item) => item.querySelector("input")?.checked)
+    .map((item) => item.dataset.metricKey)
+    .filter(Boolean);
+}
+
+function renderMetricChoices(container, selectedKeys, options, onChange) {
+  const selected = new Set(selectedKeys);
+  const choices = orderedMetricOptions(selectedKeys, options).map((metric) => {
+    const label = document.createElement("label");
+    const handle = document.createElement("span");
+    const input = document.createElement("input");
+    const text = document.createElement("span");
+
+    label.className = "metric-choice";
+    label.draggable = true;
+    label.dataset.metricKey = metric.key;
+    handle.className = "metric-handle";
+    handle.textContent = "::";
+    handle.setAttribute("aria-hidden", "true");
+    input.type = "checkbox";
+    input.value = metric.key;
+    input.checked = selected.has(metric.key);
+    input.addEventListener("change", onChange);
+    text.textContent = metric.label;
+
+    label.addEventListener("dragstart", (event) => {
+      label.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", metric.key);
+    });
+
+    label.addEventListener("dragend", () => label.classList.remove("is-dragging"));
+    label.addEventListener("dragover", (event) => {
+      const dragging = container.querySelector(".is-dragging");
+
+      if (!dragging || dragging === label) {
+        return;
+      }
+
+      event.preventDefault();
+      const rect = label.getBoundingClientRect();
+      const after = event.clientY > rect.top + rect.height / 2;
+      container.insertBefore(dragging, after ? label.nextSibling : label);
+    });
+    label.addEventListener("drop", (event) => {
+      event.preventDefault();
+      onChange();
+    });
+
+    label.append(handle, input, text);
+    return label;
+  });
+
+  container.replaceChildren(...choices);
+}
+
+function createCollapseButton(label, expanded = true) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "collapse-toggle";
+  button.setAttribute("aria-expanded", String(expanded));
+  button.setAttribute("aria-label", `${expanded ? "Collapse" : "Expand"} ${label}`);
+  button.innerHTML = `<span class="collapse-icon" aria-hidden="true"></span>`;
+  return button;
+}
+
+function setCollapsed(section, collapsed, button, label) {
+  section.dataset.collapsed = String(collapsed);
+  button.setAttribute("aria-expanded", String(!collapsed));
+  button.setAttribute("aria-label", `${collapsed ? "Expand" : "Collapse"} ${label}`);
+}
+
+function attachCollapser(section, button, label) {
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setCollapsed(section, section.dataset.collapsed !== "true", button, label);
+  });
+}
+
+function makeCardCollapsible(card) {
+  const title = card.querySelector(":scope > .card-title");
+
+  if (!title || card.querySelector(":scope > .collapsible-content")) {
+    return;
+  }
+
+  const label = title.querySelector("span")?.textContent?.trim() || "Section";
+  const existingButton = title.querySelector("button");
+  const button = existingButton || createCollapseButton(label);
+  const content = document.createElement("div");
+  content.className = "collapsible-content";
+
+  if (!existingButton) {
+    title.append(button);
+  } else {
+    button.className = "collapse-toggle";
+    button.innerHTML = `<span class="collapse-icon" aria-hidden="true"></span>`;
+    button.type = "button";
+  }
+
+  for (const child of [...card.children]) {
+    if (child !== title) {
+      content.append(child);
+    }
+  }
+
+  card.append(content);
+  setCollapsed(card, false, button, label);
+  attachCollapser(card, button, label);
+}
+
+function wrapInspectorGroup(startHeading) {
+  const group = document.createElement("section");
+  const header = document.createElement("div");
+  const title = document.createElement("h3");
+  const label = startHeading.textContent.trim();
+  const button = createCollapseButton(label);
+  const content = document.createElement("div");
+
+  group.className = "inspector-group";
+  header.className = "collapsible-heading";
+  content.className = "collapsible-content";
+  title.textContent = label;
+  header.append(title, button);
+  group.append(header, content);
+  startHeading.replaceWith(group);
+
+  let next = group.nextSibling;
+  while (next) {
+    const current = next;
+    next = next.nextSibling;
+
+    if (current.nodeType === Node.ELEMENT_NODE) {
+      const element = current;
+      if (element.matches("h3, .submodule-panel, #resetModuleAppearanceButton")) {
+        break;
+      }
+    }
+
+    content.append(current);
+  }
+
+  setCollapsed(group, false, button, label);
+  attachCollapser(group, button, label);
+}
+
+function makeSubmoduleCollapsible(panel) {
+  const heading = panel.querySelector(":scope > h3");
+
+  if (!heading || panel.querySelector(":scope > .collapsible-heading")) {
+    return;
+  }
+
+  const label = heading.textContent.trim();
+  const header = document.createElement("div");
+  const title = document.createElement("h3");
+  const button = createCollapseButton(label);
+  const content = document.createElement("div");
+
+  header.className = "collapsible-heading";
+  content.className = "collapsible-content";
+  title.textContent = label;
+  header.append(title, button);
+  heading.replaceWith(header);
+
+  for (const child of [...panel.children]) {
+    if (child !== header) {
+      content.append(child);
+    }
+  }
+
+  panel.append(content);
+  setCollapsed(panel, false, button, label);
+  attachCollapser(panel, button, label);
+}
+
+function setupCollapsiblePanels() {
+  document.querySelectorAll(".left-rail .control-card").forEach(makeCardCollapsible);
+  [...elements.selectedForm.querySelectorAll(":scope > h3")].forEach(wrapInspectorGroup);
+  elements.selectedForm.querySelectorAll(".submodule-panel").forEach(makeSubmoduleCollapsible);
+}
+
+function scoreboardSelectionOutset(module, ratio) {
+  if (module?.type !== "scoreboard") {
+    return 0;
+  }
+
+  const trackArea = 60 + scoreboardTeamNameArea(module) * 2;
+  return Math.max(0, ((trackArea - 100) * module.w * ratio) / 200);
 }
 
 function fileAsDataUrl(file) {
@@ -648,6 +1014,7 @@ function renderCanvas() {
     node.style.top = `${module.y * ratio}px`;
     node.style.width = `${module.w * ratio}px`;
     node.style.height = `${moduleDisplayHeight(module) * ratio}px`;
+    node.style.setProperty("--selection-outset-x", `${scoreboardSelectionOutset(module, ratio).toFixed(2)}px`);
     node.innerHTML = `<span class="selection-label">${escapeHtml(moduleLabel(module))}</span>`;
     node.addEventListener("pointerdown", (event) => startDrag(event, module.id, "move"));
 
@@ -708,12 +1075,15 @@ function renderCanvas() {
 function renderMetaForm() {
   const meta = state.overlay.meta;
   elements.matchTitle.value = meta.matchTitle || "";
+  elements.globalFontFamily.value = meta.globalFontFamily || "";
   elements.blueName.value = meta.blueName || "";
   elements.blueLogoUrl.value = meta.blueLogoUrl || "";
   elements.orangeName.value = meta.orangeName || "";
   elements.orangeLogoUrl.value = meta.orangeLogoUrl || "";
-  elements.blueTeamFontScale.value = meta.blueTeamFontScale || 100;
-  elements.orangeTeamFontScale.value = meta.orangeTeamFontScale || 100;
+  elements.blueTeamFontScale.value = meta.scoreboardBlueTeamFontScale || meta.blueTeamFontScale || 100;
+  elements.orangeTeamFontScale.value = meta.scoreboardOrangeTeamFontScale || meta.orangeTeamFontScale || 100;
+  elements.blueTeamFontScaleValue.textContent = `${clampNumber(meta.scoreboardBlueTeamFontScale || meta.blueTeamFontScale, 25, 120, 100)}%`;
+  elements.orangeTeamFontScaleValue.textContent = `${clampNumber(meta.scoreboardOrangeTeamFontScale || meta.orangeTeamFontScale, 25, 120, 100)}%`;
   elements.blueUseCustomColors.checked = Boolean(meta.blueUseCustomColors);
   setColorControl(elements.bluePrimaryColor, elements.bluePrimaryColorPicker, meta.bluePrimaryColor || "#168cff");
   setColorControl(elements.blueSecondaryColor, elements.blueSecondaryColorPicker, meta.blueSecondaryColor || "#dff1ff");
@@ -732,7 +1102,7 @@ function renderFocusedPlayers() {
   const selected = state.overlay?.meta?.focusedPlayerId || "";
   elements.focusedPlayerId.replaceChildren(new Option("Auto", ""));
 
-  for (const player of state.players) {
+  for (const player of availablePlayers()) {
     elements.focusedPlayerId.append(new Option(player.Name || "Unknown", playerKey(player)));
   }
 
@@ -754,6 +1124,12 @@ function renderSelectedForm() {
   elements.moduleW.value = module.w;
   elements.moduleH.value = module.h;
   elements.moduleTeamSetting.hidden = module.type !== "teamTotals";
+  const useModuleSpecificSizing = module.type === "scoreboard" || module.type === "teamTotals";
+  const useElementAppearanceControls = module.type === "scoreboard";
+  elements.moduleFontScaleField.hidden = useModuleSpecificSizing;
+  elements.moduleFontScaleValueRow.hidden = useModuleSpecificSizing;
+  elements.moduleTextColorField.hidden = useElementAppearanceControls;
+  elements.moduleAccentColorField.hidden = useElementAppearanceControls;
 
   if (module.type === "teamTotals") {
     elements.moduleTeam.value = String(module.settings?.team || 0);
@@ -769,6 +1145,120 @@ function renderSelectedForm() {
   setOptionalColorControl(elements.moduleAccentColor, elements.moduleAccentColorPicker, appearance.accentColor, "#0062ff");
   elements.moduleBackgroundOpacity.value = backgroundOpacity;
   elements.moduleBackgroundOpacityValue.textContent = `${backgroundOpacity}%`;
+  renderScoreboardElementForm(module);
+  renderScoreboardLayoutForm(module);
+  renderTeamTotalsLayoutForm(module);
+  renderTeamTotalsMetricsForm(module);
+  renderDetailedRosterMetricsForm(module);
+  renderFocusedPlayerMetricsForm(module);
+}
+
+function renderScoreboardElementForm(module) {
+  const isScoreboard = module?.type === "scoreboard";
+  elements.scoreboardElementPanel.hidden = !isScoreboard;
+
+  if (!isScoreboard) {
+    return;
+  }
+
+  const key = elements.scoreboardElementTarget.value || "title";
+  const element = module.settings?.appearance?.scoreboardElements?.[key] || {};
+  const elementScale = clampNumber(element.scale, 60, 180, 100);
+  const meta = state.overlay?.meta || {};
+  const blueTeamScale = clampNumber(meta.scoreboardBlueTeamFontScale || meta.blueTeamFontScale, 25, 120, 100);
+  const orangeTeamScale = clampNumber(meta.scoreboardOrangeTeamFontScale || meta.orangeTeamFontScale, 25, 120, 100);
+
+  elements.scoreboardElementFontFamily.value = element.fontFamily || "";
+  elements.scoreboardElementScale.value = elementScale;
+  elements.scoreboardElementScaleValue.textContent = `${elementScale}%`;
+  elements.scoreboardTeamNameScalePanel.hidden = key !== "teamNames";
+  elements.blueTeamFontScale.value = blueTeamScale;
+  elements.orangeTeamFontScale.value = orangeTeamScale;
+  elements.blueTeamFontScaleValue.textContent = `${blueTeamScale}%`;
+  elements.orangeTeamFontScaleValue.textContent = `${orangeTeamScale}%`;
+  setOptionalColorControl(
+    elements.scoreboardElementColor,
+    elements.scoreboardElementColorPicker,
+    element.color,
+    scoreboardElementColorFallback(key),
+  );
+}
+
+function scoreboardElementColorFallback(key) {
+  const fallbacks = {
+    title: "#ffffff",
+    teamNames: "#ffffff",
+    scores: "#ffffff",
+    clock: "#ffffff",
+    series: "#ffffff",
+  };
+
+  return fallbacks[key] || "#ffffff";
+}
+
+function renderScoreboardLayoutForm(module) {
+  const isScoreboard = module?.type === "scoreboard";
+  elements.scoreboardLayoutPanel.hidden = !isScoreboard;
+
+  if (!isScoreboard) {
+    return;
+  }
+
+  const teamNameArea = scoreboardTeamNameArea(module);
+  elements.scoreboardTeamNameArea.value = teamNameArea;
+  elements.scoreboardTeamNameAreaValue.textContent = `${teamNameArea}%`;
+}
+
+function renderTeamTotalsLayoutForm(module) {
+  const isTeamTotals = module?.type === "teamTotals";
+  elements.teamTotalsLayoutPanel.hidden = !isTeamTotals;
+
+  if (!isTeamTotals) {
+    return;
+  }
+
+  const nameArea = teamTotalsNameArea(module);
+  const nameScale = teamTotalsNameScale(module);
+  const metricScale = teamTotalsMetricScale(module);
+  elements.teamTotalsNameArea.value = nameArea;
+  elements.teamTotalsNameAreaValue.textContent = `${nameArea}%`;
+  elements.teamTotalsNameScale.value = nameScale;
+  elements.teamTotalsNameScaleValue.textContent = `${nameScale}%`;
+  elements.teamTotalsMetricScale.value = metricScale;
+  elements.teamTotalsMetricScaleValue.textContent = `${metricScale}%`;
+}
+
+function renderTeamTotalsMetricsForm(module) {
+  const isTeamTotals = module?.type === "teamTotals";
+  elements.teamTotalsMetricsPanel.hidden = !isTeamTotals;
+
+  if (!isTeamTotals) {
+    return;
+  }
+
+  renderMetricChoices(elements.teamTotalsMetricChoices, teamTotalsMetrics(), teamTotalsMetricOptions, updateTeamTotalsMetrics);
+}
+
+function renderDetailedRosterMetricsForm(module) {
+  const isDetailedRoster = module?.type === "detailedRoster";
+  elements.detailedRosterMetricsPanel.hidden = !isDetailedRoster;
+
+  if (!isDetailedRoster) {
+    return;
+  }
+
+  renderMetricChoices(elements.detailedRosterMetricChoices, detailedRosterMetrics(), detailedRosterMetricOptions, updateDetailedRosterMetrics);
+}
+
+function renderFocusedPlayerMetricsForm(module) {
+  const isFocusedPlayer = module?.type === "focusedPlayer";
+  elements.focusedPlayerMetricsPanel.hidden = !isFocusedPlayer;
+
+  if (!isFocusedPlayer) {
+    return;
+  }
+
+  renderMetricChoices(elements.focusedPlayerMetricChoices, focusedPlayerMetrics(), detailedRosterMetricOptions, updateFocusedPlayerMetrics);
 }
 
 function render() {
@@ -787,11 +1277,31 @@ function markDirty() {
   state.dirtyTimer = window.setTimeout(saveState, 180);
 }
 
+function normalizeOverlayMeta() {
+  const meta = state.overlay?.meta;
+
+  if (!meta) {
+    return;
+  }
+
+  if (meta.scoreboardBlueTeamFontScale === undefined && meta.blueTeamFontScale !== undefined) {
+    meta.scoreboardBlueTeamFontScale = meta.blueTeamFontScale;
+  }
+
+  if (meta.scoreboardOrangeTeamFontScale === undefined && meta.orangeTeamFontScale !== undefined) {
+    meta.scoreboardOrangeTeamFontScale = meta.orangeTeamFontScale;
+  }
+
+  delete meta.blueTeamFontScale;
+  delete meta.orangeTeamFontScale;
+}
+
 async function saveState() {
   if (!state.overlay) {
     return;
   }
 
+  normalizeOverlayMeta();
   await fetch("./api/overlay-state", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -800,13 +1310,16 @@ async function saveState() {
 }
 
 function updateMeta() {
+  const scoreboardBlueTeamFontScale = clampNumber(elements.blueTeamFontScale.value, 25, 120, 100);
+  const scoreboardOrangeTeamFontScale = clampNumber(elements.orangeTeamFontScale.value, 25, 120, 100);
+
   Object.assign(state.overlay.meta, {
     blueName: elements.blueName.value,
     blueLogoUrl: elements.blueLogoUrl.value.trim(),
     orangeName: elements.orangeName.value,
     orangeLogoUrl: elements.orangeLogoUrl.value.trim(),
-    blueTeamFontScale: Number(elements.blueTeamFontScale.value || 100),
-    orangeTeamFontScale: Number(elements.orangeTeamFontScale.value || 100),
+    scoreboardBlueTeamFontScale,
+    scoreboardOrangeTeamFontScale,
     blueUseCustomColors: elements.blueUseCustomColors.checked,
     bluePrimaryColor: normalizeColorInput(elements.bluePrimaryColor.value, "#168cff"),
     blueSecondaryColor: normalizeColorInput(elements.blueSecondaryColor.value, "#dff1ff"),
@@ -814,11 +1327,19 @@ function updateMeta() {
     orangePrimaryColor: normalizeColorInput(elements.orangePrimaryColor.value, "#ff8f1f"),
     orangeSecondaryColor: normalizeColorInput(elements.orangeSecondaryColor.value, "#fff0df"),
     matchTitle: elements.matchTitle.value,
+    globalFontFamily: elements.globalFontFamily.value,
     seriesLength: Number(elements.seriesLength.value || 5),
     blueSeriesWins: Number(elements.blueSeriesWins.value || 0),
     orangeSeriesWins: Number(elements.orangeSeriesWins.value || 0),
+    detailedRosterMetrics: detailedRosterMetrics(),
+    focusedPlayerMetrics: focusedPlayerMetrics(),
+    teamTotalsMetrics: teamTotalsMetrics(),
     focusedPlayerId: elements.focusedPlayerId.value,
   });
+  delete state.overlay.meta.blueTeamFontScale;
+  delete state.overlay.meta.orangeTeamFontScale;
+  elements.blueTeamFontScaleValue.textContent = `${scoreboardBlueTeamFontScale}%`;
+  elements.orangeTeamFontScaleValue.textContent = `${scoreboardOrangeTeamFontScale}%`;
   markDirty();
 }
 
@@ -903,6 +1424,214 @@ function resetSelectedAppearance() {
   markDirty();
 }
 
+function updateScoreboardElementAppearance() {
+  const module = selectedModule();
+
+  if (module?.type !== "scoreboard") {
+    return;
+  }
+
+  const key = elements.scoreboardElementTarget.value || "title";
+  const element = scoreboardElementAppearance(module, key);
+  const fontFamily = elements.scoreboardElementFontFamily.value;
+  const color = String(elements.scoreboardElementColor.value || "").trim();
+  const colorFallback = scoreboardElementColorFallback(key);
+
+  if (fontFamily) {
+    element.fontFamily = fontFamily;
+  } else {
+    delete element.fontFamily;
+  }
+
+  element.scale = clampNumber(elements.scoreboardElementScale.value, 60, 180, 100);
+
+  if (color) {
+    element.color = normalizeColorInput(color, colorFallback);
+    setOptionalColorControl(elements.scoreboardElementColor, elements.scoreboardElementColorPicker, element.color, colorFallback);
+  } else {
+    delete element.color;
+    setOptionalColorControl(elements.scoreboardElementColor, elements.scoreboardElementColorPicker, "", colorFallback);
+  }
+
+  if (element.scale === 100) {
+    delete element.scale;
+  }
+
+  pruneScoreboardElementAppearance(module, key);
+  elements.scoreboardElementScaleValue.textContent = `${clampNumber(elements.scoreboardElementScale.value, 60, 180, 100)}%`;
+  markDirty();
+}
+
+function resetScoreboardElementAppearance() {
+  const module = selectedModule();
+
+  if (module?.type !== "scoreboard") {
+    return;
+  }
+
+  const key = elements.scoreboardElementTarget.value || "title";
+  delete module.settings?.appearance?.scoreboardElements?.[key];
+  pruneScoreboardElementAppearance(module, key);
+  renderScoreboardElementForm(module);
+  markDirty();
+}
+
+function updateScoreboardLayout() {
+  const module = selectedModule();
+
+  if (module?.type !== "scoreboard") {
+    return;
+  }
+
+  const layout = scoreboardLayout(module);
+  const teamNameArea = clampNumber(
+    elements.scoreboardTeamNameArea.value,
+    18,
+    30,
+    defaultScoreboardTeamNameArea,
+  );
+
+  if (teamNameArea === defaultScoreboardTeamNameArea) {
+    delete layout.teamNameArea;
+  } else {
+    layout.teamNameArea = teamNameArea;
+  }
+
+  if (Object.keys(layout).length === 0) {
+    delete module.settings.appearance.scoreboardLayout;
+  }
+
+  elements.scoreboardTeamNameAreaValue.textContent = `${teamNameArea}%`;
+  renderCanvas();
+  markDirty();
+}
+
+function resetScoreboardLayout() {
+  const module = selectedModule();
+
+  if (module?.type !== "scoreboard") {
+    return;
+  }
+
+  delete module.settings?.appearance?.scoreboardLayout;
+  renderScoreboardLayoutForm(module);
+  markDirty();
+}
+
+function updateTeamTotalsLayout() {
+  const module = selectedModule();
+
+  if (module?.type !== "teamTotals") {
+    return;
+  }
+
+  const layout = teamTotalsLayout(module);
+  const nameArea = clampNumber(
+    elements.teamTotalsNameArea.value,
+    24,
+    56,
+    defaultTeamTotalsNameArea,
+  );
+  const nameScale = clampNumber(elements.teamTotalsNameScale.value, 60, 180, 100);
+  const metricScale = clampNumber(elements.teamTotalsMetricScale.value, 60, 180, 100);
+
+  if (nameArea === defaultTeamTotalsNameArea) {
+    delete layout.nameArea;
+  } else {
+    layout.nameArea = nameArea;
+  }
+
+  if (nameScale === 100) {
+    delete layout.nameScale;
+  } else {
+    layout.nameScale = nameScale;
+  }
+
+  if (metricScale === 100) {
+    delete layout.metricScale;
+  } else {
+    layout.metricScale = metricScale;
+  }
+
+  if (Object.keys(layout).length === 0) {
+    delete module.settings.appearance.teamTotalsLayout;
+  }
+
+  elements.teamTotalsNameAreaValue.textContent = `${nameArea}%`;
+  elements.teamTotalsNameScaleValue.textContent = `${nameScale}%`;
+  elements.teamTotalsMetricScaleValue.textContent = `${metricScale}%`;
+  markDirty();
+}
+
+function resetTeamTotalsLayout() {
+  const module = selectedModule();
+
+  if (module?.type !== "teamTotals") {
+    return;
+  }
+
+  delete module.settings?.appearance?.teamTotalsLayout;
+  renderTeamTotalsLayoutForm(module);
+  markDirty();
+}
+
+function updateTeamTotalsMetrics() {
+  const checked = checkedMetricKeys(elements.teamTotalsMetricChoices)
+    .filter((key) => teamTotalsMetricOptions.some((metric) => metric.key === key));
+
+  if (checked.length === 0) {
+    renderTeamTotalsMetricsForm(selectedModule());
+    return;
+  }
+
+  state.overlay.meta.teamTotalsMetrics = checked;
+  markDirty();
+}
+
+function resetTeamTotalsMetrics() {
+  state.overlay.meta.teamTotalsMetrics = [...defaultTeamTotalsMetrics];
+  renderTeamTotalsMetricsForm(selectedModule());
+  markDirty();
+}
+
+function updateDetailedRosterMetrics() {
+  const checked = checkedMetricKeys(elements.detailedRosterMetricChoices)
+    .filter((key) => detailedRosterMetricOptions.some((metric) => metric.key === key));
+
+  if (checked.length === 0) {
+    renderDetailedRosterMetricsForm(selectedModule());
+    return;
+  }
+
+  state.overlay.meta.detailedRosterMetrics = checked;
+  markDirty();
+}
+
+function resetDetailedRosterMetrics() {
+  state.overlay.meta.detailedRosterMetrics = [...defaultDetailedRosterMetrics];
+  renderDetailedRosterMetricsForm(selectedModule());
+  markDirty();
+}
+
+function updateFocusedPlayerMetrics() {
+  const checked = checkedMetricKeys(elements.focusedPlayerMetricChoices)
+    .filter((key) => detailedRosterMetricOptions.some((metric) => metric.key === key));
+
+  if (checked.length === 0) {
+    renderFocusedPlayerMetricsForm(selectedModule());
+    return;
+  }
+
+  state.overlay.meta.focusedPlayerMetrics = checked;
+  markDirty();
+}
+
+function resetFocusedPlayerMetrics() {
+  state.overlay.meta.focusedPlayerMetrics = [...defaultFocusedPlayerMetrics];
+  renderFocusedPlayerMetricsForm(selectedModule());
+  markDirty();
+}
+
 function selectedDragModules(moduleId) {
   const selectedModules = state.overlay.modules.filter((module) => isSelected(module.id));
   return selectedModules.some((module) => module.id === moduleId)
@@ -980,7 +1709,11 @@ function startDrag(event, moduleId, mode) {
     ratio,
   };
 
-  event.currentTarget.setPointerCapture?.(event.pointerId);
+  try {
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  } catch {
+    // Synthetic pointer events used by browser tests can miss capture eligibility.
+  }
 }
 
 function onPointerMove(event) {
@@ -1051,6 +1784,7 @@ function onKeyDown(event) {
 async function loadState() {
   const response = await fetch("./api/overlay-state", { cache: "no-store" });
   state.overlay = await response.json();
+  normalizeOverlayMeta();
   state.selectedId = state.overlay.modules[0]?.id || null;
   state.selectedIds = new Set(state.selectedId ? [state.selectedId] : []);
   render();
@@ -1058,9 +1792,6 @@ async function loadState() {
 
 function connectRocketLeague() {
   const socket = new WebSocket(wsUrl("/rl"));
-  socket.addEventListener("open", () => {
-    elements.connectionStatus.textContent = "Rocket League Live";
-  });
   socket.addEventListener("message", (event) => {
     const message = parseMessage(event);
     if (message?.Event === "UpdateState") {
@@ -1069,7 +1800,6 @@ function connectRocketLeague() {
     }
   });
   socket.addEventListener("close", () => {
-    elements.connectionStatus.textContent = "Reconnecting";
     window.setTimeout(connectRocketLeague, 1200);
   });
 }
@@ -1077,6 +1807,7 @@ function connectRocketLeague() {
 async function resetState() {
   const response = await fetch("./api/overlay-state/reset", { method: "POST" });
   state.overlay = await response.json();
+  normalizeOverlayMeta();
   state.selectedId = state.overlay.modules[0]?.id || null;
   state.selectedIds = new Set(state.selectedId ? [state.selectedId] : []);
   render();
@@ -1092,10 +1823,19 @@ async function refreshOutput() {
   }, 1200);
 }
 
+function showTemporaryButtonLabel(button, label) {
+  const originalHtml = button.innerHTML;
+  button.textContent = label;
+  window.setTimeout(() => {
+    button.innerHTML = originalHtml;
+  }, 1200);
+}
+
 async function previewGoal() {
   await saveState();
   const focusedId = state.overlay?.meta?.focusedPlayerId;
-  const player = state.players.find((item) => playerKey(item) === focusedId) || state.players[0];
+  const players = availablePlayers();
+  const player = players.find((item) => playerKey(item) === focusedId) || players[0];
   const scorerName = player?.Name || "Preview Player";
   const teamNum = Number.isFinite(Number(player?.TeamNum)) ? Number(player.TeamNum) : 0;
 
@@ -1105,11 +1845,14 @@ async function previewGoal() {
     body: JSON.stringify({ scorerName, teamNum }),
   });
 
-  const originalText = elements.previewGoalButton.textContent;
-  elements.previewGoalButton.textContent = "Goal Preview Sent";
-  window.setTimeout(() => {
-    elements.previewGoalButton.textContent = originalText;
-  }, 1200);
+  showTemporaryButtonLabel(elements.previewGoalButton, "Goal Preview Sent");
+}
+
+async function previewCountdown() {
+  await saveState();
+  await fetch("./api/countdown-preview", { method: "POST" });
+
+  showTemporaryButtonLabel(elements.previewCountdownButton, "Countdown Preview Sent");
 }
 
 async function uploadTeamLogo(fileInput, urlInput) {
@@ -1153,6 +1896,7 @@ function clearTeamLogo(urlInput, fileInput) {
   elements.blueUseCustomColors,
   elements.orangeUseCustomColors,
   elements.matchTitle,
+  elements.globalFontFamily,
   elements.seriesLength,
   elements.blueSeriesWins,
   elements.orangeSeriesWins,
@@ -1213,16 +1957,46 @@ elements.clearOrangeLogoButton.addEventListener("click", () =>
   text.addEventListener("change", updateSelectedAppearance);
 });
 
+elements.scoreboardElementTarget.addEventListener("input", () => renderScoreboardElementForm(selectedModule()));
+
+[
+  elements.scoreboardElementFontFamily,
+  elements.scoreboardElementScale,
+].forEach((input) => input.addEventListener("input", updateScoreboardElementAppearance));
+
+elements.scoreboardElementColorPicker.addEventListener("input", () => {
+  elements.scoreboardElementColor.value = elements.scoreboardElementColorPicker.value;
+  updateScoreboardElementAppearance();
+});
+
+elements.scoreboardElementColor.addEventListener("change", updateScoreboardElementAppearance);
+elements.resetScoreboardElementStyleButton.addEventListener("click", resetScoreboardElementAppearance);
+elements.scoreboardTeamNameArea.addEventListener("input", updateScoreboardLayout);
+elements.resetScoreboardLayoutButton.addEventListener("click", resetScoreboardLayout);
+elements.teamTotalsNameArea.addEventListener("input", updateTeamTotalsLayout);
+elements.teamTotalsNameScale.addEventListener("input", updateTeamTotalsLayout);
+elements.teamTotalsMetricScale.addEventListener("input", updateTeamTotalsLayout);
+elements.resetTeamTotalsLayoutButton.addEventListener("click", resetTeamTotalsLayout);
+elements.resetTeamTotalsMetricsButton.addEventListener("click", resetTeamTotalsMetrics);
+elements.resetDetailedRosterMetricsButton.addEventListener("click", resetDetailedRosterMetrics);
+elements.resetFocusedPlayerMetricsButton.addEventListener("click", resetFocusedPlayerMetrics);
 elements.resetModuleAppearanceButton.addEventListener("click", resetSelectedAppearance);
 elements.saveButton.addEventListener("click", saveState);
 elements.refreshButton.addEventListener("click", refreshOutput);
-elements.resetButton.addEventListener("click", resetState);
+elements.resetDefaultsButton.addEventListener("click", resetState);
 elements.toggleFocusButton.addEventListener("click", toggleFocusedView);
 elements.previewGoalButton.addEventListener("click", previewGoal);
+elements.previewCountdownButton.addEventListener("click", previewCountdown);
+elements.canvas.addEventListener("pointerdown", (event) => {
+  if (event.target === elements.canvas) {
+    deselectModules();
+  }
+});
 window.addEventListener("pointermove", onPointerMove);
 window.addEventListener("pointerup", onPointerUp);
 window.addEventListener("keydown", onKeyDown);
 window.addEventListener("resize", renderCanvas);
 
+setupCollapsiblePanels();
 loadState();
 connectRocketLeague();

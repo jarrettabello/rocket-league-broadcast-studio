@@ -23,8 +23,9 @@ const defaultOverlayState = {
     matchTitle: "",
     blueName: "",
     orangeName: "",
-    blueTeamFontScale: 100,
-    orangeTeamFontScale: 100,
+    globalFontFamily: "",
+    scoreboardBlueTeamFontScale: 100,
+    scoreboardOrangeTeamFontScale: 100,
     blueUseCustomColors: false,
     bluePrimaryColor: "#168cff",
     blueSecondaryColor: "#dff1ff",
@@ -33,6 +34,9 @@ const defaultOverlayState = {
     orangeSecondaryColor: "#fff0df",
     blueLogoUrl: "",
     orangeLogoUrl: "",
+    detailedRosterMetrics: ["score", "goals", "saves", "assists", "demos"],
+    focusedPlayerMetrics: ["score", "goals", "shots", "assists", "saves"],
+    teamTotalsMetrics: ["goals", "saves", "assists", "demos"],
     seriesLength: 5,
     blueSeriesWins: 0,
     orangeSeriesWins: 0,
@@ -415,6 +419,12 @@ async function handleApiRequest(request, response, pathname) {
     } catch {
       sendJson(response, 400, { error: "Invalid goal preview JSON" });
     }
+    return true;
+  }
+
+  if (pathname === "/api/countdown-preview" && request.method === "POST") {
+    broadcastTo(overlayStateClients, { type: "countdownPreview" });
+    sendJson(response, 200, { ok: true });
     return true;
   }
 

@@ -29,7 +29,7 @@ A local producer-controlled broadcast overlay for Rocket League streams. It read
 
 ## Screenshots
 
-![Rocket League Broadcast Studio producer panel](assets/rlbs-producerpanel-updates.png)
+![Rocket League Broadcast Studio producer panel](assets/rlbs-new-producer-view.png)
 
 ## Requirements
 

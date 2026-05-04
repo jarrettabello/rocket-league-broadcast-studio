@@ -40,7 +40,7 @@ body {
   display: none;
   background:
     linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)),
-    url("./assets/output-preview-background.png") center / cover no-repeat;
+    url("./assets/rlbs-producer-background.png") center / cover no-repeat;
 }
 
 body[data-preview-background="true"] .output-viewport::before {
